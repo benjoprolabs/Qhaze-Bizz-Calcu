@@ -13,6 +13,13 @@ const CONFIG = {
 // IDs of the five cost inputs. They are all validated and added the same way.
 const COST_FIELDS = ["materials", "packaging", "shipping", "labour", "other"];
 
+// Every input on the page that should be remembered between visits.
+const SAVED_FIELDS = [...COST_FIELDS, "quantity", "markup", "commission"];
+
+// The name our data is stored under in localStorage. The "v1" lets us
+// change the format later without confusing old saved data.
+const STORAGE_KEY = "qhaze-calculator-inputs-v1";
+
 // ---------- Formatting helpers ----------
 
 /**
@@ -281,6 +288,77 @@ function updateAffiliate(product) {
   }
 }
 
+// ---------- 4. Saving and restoring inputs (localStorage) ----------
+
+/**
+ * Saves every input's current text to localStorage.
+ * Returns true if it worked, false if the browser blocked it.
+ */
+function saveInputs() {
+  // Build a plain object like { materials: "500", packaging: "", ... }
+  const values = {};
+  SAVED_FIELDS.forEach((id) => {
+    values[id] = document.getElementById(id).value;
+  });
+
+  // localStorage can only store text, so we convert the object to a
+  // JSON string. It can throw an error (private mode, storage full),
+  // so we "try" it and "catch" the error instead of crashing.
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
+ * Puts previously saved values back into the inputs.
+ * Anything missing, damaged or unexpected is simply ignored.
+ */
+function restoreInputs() {
+  let saved;
+  try {
+    const text = localStorage.getItem(STORAGE_KEY); // null if nothing saved yet
+    if (text === null) return;
+    saved = JSON.parse(text);                       // text -> object
+  } catch (error) {
+    return; // storage blocked or data damaged: start with an empty form
+  }
+
+  // Make sure we got an object, not e.g. a number or a list
+  if (typeof saved !== "object" || saved === null || Array.isArray(saved)) return;
+
+  // Only restore fields we know about, and only if the value is text.
+  // We never trust stored data blindly.
+  SAVED_FIELDS.forEach((id) => {
+    if (typeof saved[id] === "string") {
+      document.getElementById(id).value = saved[id];
+    }
+  });
+}
+
+/**
+ * Deletes the saved data.
+ */
+function clearSavedInputs() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (error) {
+    // Nothing to do: if storage is blocked, nothing was saved anyway
+  }
+}
+
+/**
+ * Updates the message in the toolbar.
+ */
+function showSaveStatus(isWorking) {
+  document.getElementById("save-status").classList.toggle("is-off", !isWorking);
+  document.getElementById("save-status-text").textContent = isWorking
+    ? "Your inputs are saved on this device automatically."
+    : "Saving is turned off in this browser. Your inputs will be lost when you leave.";
+}
+
 /**
  * Refreshes both calculators. The affiliate section depends on the
  * product cost results, so they always update together, in order.
@@ -298,24 +376,33 @@ document.getElementById("currency-label").textContent =
 
 // One listener on the whole form catches typing in ANY of its inputs.
 // The "input" event fires on every keystroke, so results are live.
-// Changing either form refreshes both, because the affiliate results
-// depend on the selling price and profit from the cost form.
+// Typing in either form: recalculate both (the affiliate results depend
+// on the cost form), then save everything.
 const costForm = document.getElementById("cost-form");
 const affiliateForm = document.getElementById("affiliate-form");
-costForm.addEventListener("input", updateAll);
-affiliateForm.addEventListener("input", updateAll);
+
+function handleInput() {
+  updateAll();
+  showSaveStatus(saveInputs());
+}
+costForm.addEventListener("input", handleInput);
+affiliateForm.addEventListener("input", handleInput);
 
 // Pressing Enter inside a form would normally reload the page; stop that.
 [costForm, affiliateForm].forEach((form) =>
   form.addEventListener("submit", (event) => event.preventDefault())
 );
 
-// "Clear all" empties both forms, then refreshes the results.
+// "Clear all" empties both forms, deletes the saved data,
+// then refreshes the results.
 document.getElementById("reset-btn").addEventListener("click", () => {
   costForm.reset();
   affiliateForm.reset();
+  clearSavedInputs();
   updateAll();
 });
 
-// Run once at start so the page begins in a consistent state.
+// On page load: put saved values back FIRST, then calculate. The results
+// are worked out exactly as if the user had just typed those values.
+restoreInputs();
 updateAll();

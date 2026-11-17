@@ -10,6 +10,12 @@ A simple web app that helps small businesses work out their numbers:
 
 Default currency: **RM (Malaysian Ringgit)**. You can change it in `js/app.js` (`CONFIG.currencySymbol`).
 
+## Saved inputs
+
+Everything you type is saved automatically in your browser (localStorage) and
+restored when you come back. It stays on your device and is never sent anywhere.
+**Clear all** empties the form and deletes the saved data.
+
 ## Tech stack
 
 Plain **HTML**, **CSS** and **JavaScript**. No frameworks, no build tools, nothing to install.
@@ -35,7 +41,8 @@ README.md       This file
   - [x] Gross profit per unit
   - [x] Profit margin (%)
 - [x] Step 3: Affiliate commission (with loss warning)
-- [ ] Next: polish and extra features
+- [x] Step 4: Remember inputs (saved in the browser with localStorage)
+- [ ] Next: more features
 
 ## Formulas
 

@@ -27,6 +27,16 @@
   <!-- ===== MAIN CONTENT ===== -->
   <main class="container">
 
+    <!-- ===== TOOLBAR =====
+         Shows whether inputs are being saved, and clears everything. -->
+    <div class="toolbar">
+      <p class="save-status" id="save-status">
+        <span class="save-dot" aria-hidden="true"></span>
+        <span id="save-status-text">Your inputs are saved on this device automatically.</span>
+      </p>
+      <button type="button" id="reset-btn" class="btn-secondary">Clear all</button>
+    </div>
+
     <!-- ===== PRODUCT COST CALCULATOR (Step 2) =====
          Left: the form where you type your numbers.
          Right: the results, updated live by js/app.js. -->
@@ -106,8 +116,6 @@
             <p class="error" id="markup-error"></p>
           </div>
         </div>
-
-        <button type="button" id="reset-btn" class="btn-secondary">Clear all</button>
       </form>
 
       <!-- aria-live="polite": screen readers announce result changes -->
