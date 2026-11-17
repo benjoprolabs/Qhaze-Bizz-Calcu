@@ -10,6 +10,20 @@ A simple web app that helps small businesses work out their numbers:
 
 Default currency: **RM (Malaysian Ringgit)**. You can change it in `js/app.js` (`CONFIG.currencySymbol`).
 
+## Dashboard and reports
+
+Built from your saved Business Records and updated whenever a record is saved,
+edited, deleted or imported:
+
+- **KPI cards**: products, average net margin, total startup capital, best margin
+- **Net margin bars** for every priced product (red for products that lose money)
+- **Product report table**, filterable by business
+- **Print / Save as PDF**: prints a clean, light-coloured report of the dashboard
+
+Each product's figures come from Smart Pricing if it has a smart price, otherwise
+from the Product Cost markup after affiliate commission. Startup capital is counted
+once per business, using its most recently saved figure.
+
 ## Saved inputs
 
 Everything you type is saved automatically in your browser (localStorage) and
@@ -38,7 +52,7 @@ Open `index.html` in any web browser (double-click it).
 
 ## Tests
 
-242 automated browser tests live in `tests/`. Run them with `npm test`
+283 automated browser tests live in `tests/`. Run them with `npm test`
 (see `tests/README.md` for the one-time setup). The app itself needs no install.
 
 ## Project structure
@@ -64,7 +78,7 @@ package.json    Test setup only (the app doesn't need it)
 - [x] Step 5: Business capital calculator
 - [x] Step 6: Smart selling price calculator (linked to Product Cost)
 - [x] Step 7: Business records (save, group, search, load, view, edit, delete, JSON backup)
-- [ ] Next: dashboard and reports
+- [x] Step 8: Dashboard and reports (KPIs, margin bars, filterable report, print / PDF)
 
 ## Formulas
 

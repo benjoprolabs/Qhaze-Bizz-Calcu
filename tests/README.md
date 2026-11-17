@@ -12,6 +12,7 @@ and checks the results.
 | `04-business-capital.test.js` | Startup capital total and breakdown |
 | `05-smart-pricing.test.js` | Smart selling price, link to Product Cost, break-even |
 | `06-business-records.test.js` | Records: save, group, search, load, edit, delete, backup |
+| `07-dashboard.test.js` | Dashboard KPIs, margin bars, report table, filter, print / PDF |
 
 ## Running them
 

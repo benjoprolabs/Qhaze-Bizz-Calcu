@@ -111,7 +111,7 @@ function check(name, got, want) {
   // Navigation links
   check('nav links point at real sections', await p.evaluate(() =>
     [...document.querySelectorAll('.section-nav a')].map(a => [a.textContent, !!document.querySelector(a.getAttribute('href'))])),
-    [['Product Cost', true], ['Affiliate Commission', true], ['Business Capital', true], ['Smart Pricing', true], ['Records', true]]);
+    [['Dashboard', true], ['Product Cost', true], ['Affiliate Commission', true], ['Business Capital', true], ['Smart Pricing', true], ['Records', true]]);
   await p.click('.section-nav a[href="#capital"]');
   await p.waitForTimeout(800);
   check('clicking "Business Capital" brings it fully into view', await p.evaluate(() => {

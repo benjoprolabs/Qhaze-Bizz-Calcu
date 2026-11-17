@@ -799,6 +799,353 @@ fieldset.field legend {
   accent-color: var(--purple);
 }
 
+/* ---------- Dashboard ---------- */
+#dashboard {
+  scroll-margin-top: 16px;
+}
+
+.dashboard-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.card .report-meta {
+  font-size: 0.85rem;
+}
+
+.dashboard-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.select-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* Dark dropdown that matches the inputs */
+.dashboard-controls select {
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 12px;
+  max-width: 100%;
+  cursor: pointer;
+}
+
+.dashboard-controls select:focus-visible {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.2);
+}
+
+.dashboard-empty a {
+  display: inline-block;
+  margin-top: 12px;
+  text-decoration: none;
+}
+
+.dashboard-empty[hidden],
+#dashboard-content[hidden],
+.dashboard-controls[hidden] {
+  display: none;
+}
+
+/* KPI cards: 4 across on desktop, 2 on tablets, 1 on small phones */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.kpi {
+  padding: 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  border-top: 3px solid var(--purple);
+  min-width: 0;
+}
+
+.kpi:nth-child(even) {
+  border-top-color: var(--cyan);
+}
+
+.card .kpi-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.card .kpi-value {
+  margin: 4px 0 2px;
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+  background: linear-gradient(90deg, var(--purple), var(--cyan));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Product names are text, so a little smaller */
+.card .kpi-value-text {
+  font-size: 1.2rem;
+}
+
+.card .kpi-sub {
+  font-size: 0.8rem;
+}
+
+#dash-loss {
+  margin-top: 16px;
+}
+
+/* Margin bars reuse .breakdown / .bar from Business Capital */
+.margin-bars {
+  margin-top: 10px;
+}
+
+.bar-fill.is-negative {
+  background: var(--error);
+}
+
+.breakdown-label .is-loss {
+  color: var(--error);
+}
+
+.card .dash-none {
+  margin-top: 8px;
+  font-size: 0.85rem;
+}
+
+/* Report table */
+.table-wrap {
+  margin-top: 10px;
+  overflow-x: auto;           /* safety net: scroll the table, never the page */
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.report-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.report-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.report-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.report-table td.is-loss {
+  color: var(--error);
+  font-weight: 700;
+}
+
+.report-product {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.report-source {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.card .report-note {
+  margin-top: 12px;
+  font-size: 0.75rem;
+}
+
+/* Phones: each table row becomes a small card. "screen" only, so the
+   printed report always keeps the normal table. */
+@media screen and (max-width: 700px) {
+  .report-table thead {
+    position: absolute;       /* hidden visually, still read by screen readers */
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .report-table,
+  .report-table tbody,
+  .report-table tr,
+  .report-table td {
+    display: block;
+  }
+
+  .report-table tr {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .report-table td {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 3px 0;
+    border: none;
+    text-align: right;
+  }
+
+  /* The label comes from each cell's data-label attribute */
+  .report-table td::before {
+    content: attr(data-label);
+    color: var(--text-muted);
+    text-align: left;
+    font-weight: 400;
+  }
+
+  .report-table td:first-child::before {
+    content: none;            /* the product name is the card's title */
+  }
+
+  .report-table td:first-child {
+    display: block;
+    text-align: left;
+    font-size: 0.95rem;
+  }
+}
+
+/* ---------- Printing / Save as PDF ---------- */
+@media print {
+  /* Light theme for paper: redefine the colour tokens */
+  :root {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --border: #d4d4dc;
+    --text: #111118;
+    --text-muted: #4a4a5a;
+    --purple: #6d28d9;
+    --cyan: #0e7490;
+    --error: #be123c;
+    color-scheme: light;
+  }
+
+  body {
+    background: #ffffff;
+    min-height: 0;
+  }
+
+  /* Keep bar colours and the logo when printing */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Print only the header and the dashboard */
+  .toolbar,
+  .section-nav,
+  .calculator,
+  #records,
+  .site-footer,
+  .no-print {
+    display: none !important;
+  }
+
+  .container,
+  .site-header {
+    max-width: none;
+    padding: 0;
+  }
+
+  .site-header {
+    margin-bottom: 12px;
+  }
+
+  .card {
+    border: none;
+    padding: 0;
+    box-shadow: none;
+  }
+
+  /* Gradient text can print blank: use a solid colour instead */
+  .accent,
+  .card .kpi-value {
+    background: none;
+    color: var(--purple);
+  }
+
+  .kpi,
+  .breakdown li,
+  .report-table tr {
+    break-inside: avoid;      /* don't split one card/row across pages */
+  }
+
+  /* All four KPIs in one row on paper */
+  .kpi-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .kpi {
+    padding: 10px;
+  }
+
+  .card .kpi-value {
+    font-size: 13pt;
+  }
+
+  .card .kpi-value-text {
+    font-size: 11pt;
+  }
+
+  /* Fit all 8 columns on the page: no scroll box, wrap headings, tighter cells */
+  .table-wrap {
+    overflow: visible;
+  }
+
+  .report-table {
+    font-size: 8pt;
+  }
+
+  .report-table th {
+    white-space: normal;
+    padding: 6px 4px;
+    font-size: 7pt;
+  }
+
+  .report-table td {
+    padding: 6px 4px;
+  }
+
+  @page {
+    margin: 14mm;
+  }
+}
+
 /* ---------- 7. Footer ---------- */
 .site-footer {
   text-align: center;

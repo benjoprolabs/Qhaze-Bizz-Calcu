@@ -40,7 +40,8 @@
     <!-- ===== SECTION NAVIGATION =====
          Plain links: "#product-cost" jumps to the element with id="product-cost".
          No JavaScript needed. -->
-    <nav class="section-nav" aria-label="Calculators">
+    <nav class="section-nav" aria-label="Sections">
+      <a href="#dashboard">Dashboard</a>
       <a href="#product-cost">Product Cost</a>
       <a href="#affiliate">Affiliate Commission</a>
       <a href="#capital">Business Capital</a>
@@ -48,10 +49,95 @@
       <a href="#records">Records</a>
     </nav>
 
+    <!-- ===== DASHBOARD & REPORTS =====
+         Built from the saved Business Records by js/app.js.
+         Also the page that prints (see @media print in style.css). -->
+    <section id="dashboard" class="dashboard">
+      <div class="card dashboard-card">
+        <div class="dashboard-head">
+          <div>
+            <span class="badge">Dashboard</span>
+            <h2>Business overview</h2>
+            <p class="report-meta" id="report-meta">Based on your saved records.</p>
+          </div>
+          <!-- no-print: hidden on paper -->
+          <div class="dashboard-controls no-print" id="dashboard-controls">
+            <label class="select-label" for="dash-business">Business</label>
+            <select id="dash-business">
+              <option value="">All businesses</option>
+            </select>
+            <button type="button" id="print-btn" class="btn-secondary">Print / Save as PDF</button>
+          </div>
+        </div>
+
+        <!-- Shown when there are no records -->
+        <div class="records-empty dashboard-empty" id="dashboard-empty" hidden>
+          <p><strong>Your dashboard is empty.</strong></p>
+          <p>Fill in the calculators, then save a product in Business Records.
+            Your KPIs, margin comparison and printable report will appear here.</p>
+          <a class="btn-secondary btn-small no-print" href="#records">Go to Business Records</a>
+        </div>
+
+        <div id="dashboard-content">
+          <!-- KPI cards -->
+          <div class="kpi-grid">
+            <div class="kpi">
+              <p class="kpi-label">Products</p>
+              <p class="kpi-value" id="kpi-products">—</p>
+              <p class="kpi-sub" id="kpi-products-sub"></p>
+            </div>
+            <div class="kpi">
+              <p class="kpi-label">Average net margin</p>
+              <p class="kpi-value" id="kpi-margin">—</p>
+              <p class="kpi-sub" id="kpi-margin-sub"></p>
+            </div>
+            <div class="kpi">
+              <p class="kpi-label">Total startup capital</p>
+              <p class="kpi-value" id="kpi-capital">—</p>
+              <p class="kpi-sub" id="kpi-capital-sub"></p>
+            </div>
+            <div class="kpi">
+              <p class="kpi-label">Best margin</p>
+              <p class="kpi-value kpi-value-text" id="kpi-best">—</p>
+              <p class="kpi-sub" id="kpi-best-sub"></p>
+            </div>
+          </div>
+
+          <!-- Shown when some products lose money -->
+          <div class="warning" id="dash-loss" role="alert" hidden></div>
+
+          <h3 class="results-subhead">Net margin by product</h3>
+          <ul class="breakdown margin-bars" id="margin-bars"></ul>
+
+          <h3 class="results-subhead">Product report</h3>
+          <div class="table-wrap">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th scope="col">Product</th>
+                  <th scope="col">Business</th>
+                  <th scope="col" class="num">Cost / unit</th>
+                  <th scope="col" class="num">Price</th>
+                  <th scope="col" class="num">Net profit / unit</th>
+                  <th scope="col" class="num">Net margin</th>
+                  <th scope="col" class="num">Break-even</th>
+                  <th scope="col">Updated</th>
+                </tr>
+              </thead>
+              <tbody id="report-body"></tbody>
+            </table>
+          </div>
+          <p class="report-note">Net figures come from Smart Pricing when a record has a smart price
+            (after affiliate and platform fees); otherwise from Product Cost markup after the affiliate
+            commission. Startup capital is counted once per business, using its most recently saved figure.</p>
+        </div>
+      </div>
+    </section>
+
     <!-- ===== PRODUCT COST CALCULATOR (Step 2) =====
          Left: the form where you type your numbers.
          Right: the results, updated live by js/app.js. -->
-    <section class="calculator" id="product-cost">
+    <section class="calculator section-gap" id="product-cost">
 
       <!-- novalidate: we do our own validation in JavaScript so we can show
            friendly messages under each field instead of browser pop-ups. -->

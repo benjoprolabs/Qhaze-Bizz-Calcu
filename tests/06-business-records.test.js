@@ -25,7 +25,7 @@ function check(name, got, want) {
     g.querySelector('.record-group-title').firstChild.textContent,
     g.querySelector('.record-count').textContent,
     [...g.querySelectorAll('.record-name')].map(n => n.textContent)]));
-  const empty = () => p.evaluate(() => document.querySelector('.records-empty')?.textContent ?? null);
+  const empty = () => p.evaluate(() => document.querySelector('#records-list .records-empty')?.textContent ?? null);
   const stored = () => p.evaluate(k => JSON.parse(localStorage.getItem(k)), RKEY);
   const rec = name => p.locator('.record', { has: p.locator('.record-name', { hasText: new RegExp(`^${name}$`) }) });
   const click = (name, action) => rec(name).locator(`button[data-action="${action}"]`).click();

@@ -964,10 +964,12 @@ function recordsMessage(message, isError = false) {
 }
 
 /**
- * Saves the records and reports a problem if storage failed.
+ * Called after EVERY change to the records (save, edit, delete, import):
+ * refreshes the dashboard, saves, and reports a problem if storage failed.
  * Returns true if saved.
  */
 function persistRecords(successMessage) {
+  renderDashboard(); // the records changed, so the dashboard must too
   if (saveRecords()) {
     recordsMessage(successMessage);
     return true;
@@ -1379,6 +1381,253 @@ async function importRecords(file) {
   renderRecords();
 }
 
+// ---------- 7. Dashboard and reports ----------
+
+// The business shown by the dashboard filter ("" = all businesses).
+// Stored in lower case, the same way records are grouped.
+let dashboardBusiness = "";
+
+/**
+ * Picks ONE consistent set of numbers for a record (never a mix):
+ *   1. Smart Pricing, if the record has a smart price
+ *   2. otherwise Product Cost markup (net after affiliate commission)
+ *   3. otherwise "not priced"
+ */
+function recordMetrics(record) {
+  const r = record.results;
+  if (r.smartPrice !== null) {
+    return {
+      source: "Smart pricing",
+      cost: r.smartCost,
+      price: r.smartPrice,
+      netProfit: r.smartNetProfit,
+      netMargin: r.smartNetMarginPercent,
+      breakEven: r.breakEvenUnits,
+    };
+  }
+  if (r.sellingPrice !== null) {
+    return {
+      source: r.netProfit !== null ? "Markup + commission" : "Markup",
+      cost: r.costPerUnit,
+      price: r.sellingPrice,
+      netProfit: r.netProfit ?? r.grossProfit,
+      netMargin: r.netMarginPercent ?? r.marginPercent,
+      breakEven: null,
+    };
+  }
+  return {
+    source: "Not priced",
+    cost: r.costPerUnit ?? r.smartCost,
+    price: null,
+    netProfit: null,
+    netMargin: null,
+    breakEven: null,
+  };
+}
+
+/**
+ * All dashboard numbers for a list of records. Pure: no page access.
+ */
+function calculateDashboard(list) {
+  // One row per record, sorted by business then product
+  const rows = list
+    .map((record) => ({ record, ...recordMetrics(record) }))
+    .sort((a, b) =>
+      a.record.businessName.localeCompare(b.record.businessName) ||
+      a.record.productName.localeCompare(b.record.productName));
+
+  const priced = rows.filter((row) => row.netMargin !== null);
+
+  // Simple average: every priced product counts equally
+  const averageMargin = priced.length > 0
+    ? priced.reduce((sum, row) => sum + row.netMargin, 0) / priced.length
+    : null;
+
+  // Best margin (on a tie, the first in A-Z order wins)
+  const best = priced.reduce((top, row) => (top === null || row.netMargin > top.netMargin ? row : top), null);
+
+  // Startup capital: ONCE per business, from its most recently updated record.
+  // (ISO dates like "2026-11-17T..." sort correctly as plain text.)
+  const latestCapital = {};
+  rows.forEach((row) => {
+    const amount = row.record.results.capitalTotal;
+    if (amount === null) return;
+    const key = row.record.businessName.toLowerCase();
+    const previous = latestCapital[key];
+    if (!previous || row.record.updatedAt > previous.updatedAt) {
+      latestCapital[key] = { amount, updatedAt: row.record.updatedAt };
+    }
+  });
+  const capitalValues = Object.values(latestCapital).map((c) => c.amount);
+  const totalCapital = capitalValues.length > 0 ? capitalValues.reduce((a, b) => a + b, 0) : null;
+
+  // Products that lose money per sale (compared in whole sen)
+  const losses = rows.filter((row) => row.netProfit !== null && Math.round(row.netProfit * 100) < 0);
+
+  const businessCount = new Set(rows.map((row) => row.record.businessName.toLowerCase())).size;
+
+  return {
+    rows,
+    productCount: rows.length,
+    businessCount,
+    pricedCount: priced.length,
+    averageMargin,
+    best,
+    totalCapital,
+    capitalBusinessCount: capitalValues.length,
+    losses,
+    // Bars: highest margin first
+    bars: [...priced].sort((a, b) => b.netMargin - a.netMargin),
+  };
+}
+
+/**
+ * "1 product" / "2 products": picks the right word for the number.
+ * Irregular words pass their plural: plural(2, "business", "businesses").
+ */
+function plural(count, word, pluralWord = `${word}s`) {
+  return `${count.toLocaleString(CONFIG.locale)} ${count === 1 ? word : pluralWord}`;
+}
+
+/**
+ * Fills the business filter dropdown, keeping the current choice if it
+ * still exists.
+ */
+function renderBusinessFilter() {
+  const select = document.getElementById("dash-business");
+  const names = {};
+  records.forEach((r) => { names[r.businessName.toLowerCase()] = r.businessName; });
+  const keys = Object.keys(names).sort();
+
+  // If the chosen business no longer has records, go back to "all"
+  if (dashboardBusiness !== "" && !keys.includes(dashboardBusiness)) dashboardBusiness = "";
+
+  const all = el("option", "", "All businesses");
+  all.value = "";
+  select.replaceChildren(all, ...keys.map((key) => {
+    const option = el("option", "", names[key]);
+    option.value = key;
+    return option;
+  }));
+  select.value = dashboardBusiness;
+}
+
+/**
+ * The line under the dashboard title, e.g.
+ * "Report generated 17 Nov 2026 · All businesses · 3 products".
+ */
+function updateReportMeta(productCount) {
+  const date = new Date().toLocaleDateString(CONFIG.locale, { day: "numeric", month: "short", year: "numeric" });
+  const select = document.getElementById("dash-business");
+  const scope = dashboardBusiness === "" ? "All businesses" : select.options[select.selectedIndex].textContent;
+  document.getElementById("report-meta").textContent =
+    `Report generated ${date} · ${scope} · ${plural(productCount, "product")}`;
+}
+
+/**
+ * Redraws the whole dashboard from the saved records.
+ * Called on start-up and after every change to the records.
+ */
+function renderDashboard() {
+  const empty = records.length === 0;
+  document.getElementById("dashboard-empty").hidden = !empty;
+  document.getElementById("dashboard-content").hidden = empty;
+  document.getElementById("dashboard-controls").hidden = empty;
+  if (empty) {
+    dashboardBusiness = "";
+    document.getElementById("report-meta").textContent = "Based on your saved records.";
+    return;
+  }
+
+  renderBusinessFilter();
+  const shown = dashboardBusiness === ""
+    ? records
+    : records.filter((r) => r.businessName.toLowerCase() === dashboardBusiness);
+  const d = calculateDashboard(shown);
+  updateReportMeta(d.productCount);
+
+  // ----- KPI cards -----
+  setOutput("kpi-products", d.productCount.toLocaleString(CONFIG.locale));
+  setOutput("kpi-products-sub", `in ${plural(d.businessCount, "business", "businesses")}`);
+  setOutput("kpi-margin", d.averageMargin === null ? "—" : formatPercent(d.averageMargin));
+  setOutput("kpi-margin-sub", d.pricedCount === 0
+    ? "No priced products yet"
+    : `across ${plural(d.pricedCount, "priced product")}`);
+  setOutput("kpi-capital", d.totalCapital === null ? "—" : formatMoney(d.totalCapital));
+  setOutput("kpi-capital-sub", d.totalCapital === null
+    ? "No startup capital saved"
+    : `from ${plural(d.capitalBusinessCount, "business", "businesses")}`);
+  setOutput("kpi-best", d.best === null ? "—" : d.best.record.productName);
+  setOutput("kpi-best-sub", d.best === null
+    ? ""
+    : `${formatPercent(d.best.netMargin)} net margin · ${d.best.record.businessName}`);
+
+  // ----- Loss alert -----
+  const lossBox = document.getElementById("dash-loss");
+  lossBox.replaceChildren();
+  lossBox.hidden = d.losses.length === 0;
+  if (d.losses.length > 0) {
+    lossBox.append(
+      el("strong", "", `⚠ ${plural(d.losses.length, "product")} ${d.losses.length === 1 ? "loses" : "lose"} money on each sale.`),
+      el("p", "", d.losses.map((row) => `${row.record.productName} (${formatMoney(row.netProfit)})`).join(", ")));
+  }
+
+  // ----- Margin bars -----
+  const bars = document.getElementById("margin-bars");
+  bars.replaceChildren();
+  if (d.bars.length === 0) {
+    bars.append(el("li", "dash-none", "No priced products yet. Add a markup or a smart price before saving a record."));
+  }
+  d.bars.forEach((row) => {
+    const item = el("li");
+    const label = el("div", "breakdown-label");
+    const name = dashboardBusiness === ""
+      ? `${row.record.productName} · ${row.record.businessName}`
+      : row.record.productName;
+    const value = el("span", row.netMargin < 0 ? "is-loss" : "", formatPercent(row.netMargin));
+    label.append(el("span", "", name), value);
+
+    const bar = el("div", "bar");
+    const fill = el("div", row.netMargin < 0 ? "bar-fill is-negative" : "bar-fill");
+    // Bar length = margin %, kept between 0% and 100% of the track.
+    // Negative margins show a red bar sized by how big the loss is.
+    fill.style.width = `${Math.min(Math.abs(row.netMargin), 100)}%`;
+    bar.append(fill);
+    item.append(label, bar);
+    bars.append(item);
+  });
+
+  // ----- Report table -----
+  const body = document.getElementById("report-body");
+  body.replaceChildren();
+  d.rows.forEach((row) => {
+    const tr = el("tr");
+    const cell = (label, text, className = "") => {
+      const td = el("td", className, text);
+      td.dataset.label = label; // used as the label on phones
+      return td;
+    };
+    const productCell = cell("Product", "");
+    productCell.append(el("span", "report-product", row.record.productName), el("span", "report-source", row.source));
+    const money = (value) => (value === null ? "—" : formatMoney(value));
+    const isLoss = row.netProfit !== null && Math.round(row.netProfit * 100) < 0;
+    const updated = new Date(row.record.updatedAt).toLocaleDateString(CONFIG.locale,
+      { day: "numeric", month: "short", year: "numeric" });
+
+    tr.append(
+      productCell,
+      cell("Business", row.record.businessName),
+      cell("Cost / unit", money(row.cost), "num"),
+      cell("Price", money(row.price), "num"),
+      cell("Net profit / unit", money(row.netProfit), isLoss ? "num is-loss" : "num"),
+      cell("Net margin", row.netMargin === null ? "—" : formatPercent(row.netMargin), isLoss ? "num is-loss" : "num"),
+      cell("Break-even", row.breakEven === null ? "—" : plural(row.breakEven, "unit"), "num"),
+      cell("Updated", updated),
+    );
+    body.append(tr);
+  });
+}
+
 // ---------- Start-up ----------
 
 // Show the active currency in the footer.
@@ -1493,6 +1742,19 @@ importFile.addEventListener("change", async () => {
 restoreInputs();
 updateAll();
 
-// Load and show the saved records
+// ----- Dashboard events -----
+document.getElementById("dash-business").addEventListener("change", (event) => {
+  dashboardBusiness = event.target.value;
+  renderDashboard();
+});
+// window.print() opens the browser's print window, which offers "Save as PDF"
+document.getElementById("print-btn").addEventListener("click", () => window.print());
+// Refresh the date line just before printing, in case the page was open overnight
+window.addEventListener("beforeprint", () => {
+  if (records.length > 0) renderDashboard();
+});
+
+// Load and show the saved records, then the dashboard built from them
 records = loadRecords();
 renderRecords();
+renderDashboard();
