@@ -13,8 +13,22 @@ const CONFIG = {
 // IDs of the five cost inputs. They are all validated and added the same way.
 const COST_FIELDS = ["materials", "packaging", "shipping", "labour", "other"];
 
+// The six startup capital inputs, with the names shown in the breakdown.
+const CAPITAL_FIELDS = [
+  { id: "cap-equipment", label: "Equipment & machinery" },
+  { id: "cap-materials", label: "Initial raw materials" },
+  { id: "cap-packaging", label: "Packaging capital" },
+  { id: "cap-marketing", label: "Marketing budget" },
+  { id: "cap-rental", label: "Rental & utilities" },
+  { id: "cap-other", label: "Other startup expenses" },
+];
+
 // Every input on the page that should be remembered between visits.
-const SAVED_FIELDS = [...COST_FIELDS, "quantity", "markup", "commission"];
+// map() turns the list of capital objects into a list of just their ids.
+const SAVED_FIELDS = [
+  ...COST_FIELDS, "quantity", "markup", "commission",
+  ...CAPITAL_FIELDS.map((field) => field.id),
+];
 
 // The name our data is stored under in localStorage. The "v1" lets us
 // change the format later without confusing old saved data.
@@ -87,6 +101,31 @@ function calculateAffiliate(sellingPrice, grossProfit, ratePercent) {
   const isBreakEven = netSen === 0;
 
   return { commission, netProfit, netMarginPercent, isLoss, isBreakEven };
+}
+
+/**
+ * Works out the total startup capital and each category's share.
+ *
+ * @param {{label: string, amount: number}[]} items  one entry per category
+ * @returns {{ total: number,
+ *             items: {label: string, amount: number, percent: number}[],
+ *             largest: {label: string, amount: number, percent: number} | null }}
+ *   items are sorted biggest first; largest is null when everything is 0.
+ */
+function calculateCapital(items) {
+  const total = items.reduce((sum, item) => sum + item.amount, 0);
+
+  const withShares = items
+    .map((item) => ({
+      ...item,
+      // Each category's share of the total, as a percentage (no ÷ 0)
+      percent: total > 0 ? (item.amount / total) * 100 : 0,
+    }))
+    // sort() with (a, b) => b - a puts the biggest amounts first
+    .sort((a, b) => b.amount - a.amount);
+
+  const largest = total > 0 ? withShares[0] : null;
+  return { total, items: withShares, largest };
 }
 
 // ---------- 2. Reading and validating inputs ----------
@@ -288,6 +327,80 @@ function updateAffiliate(product) {
   }
 }
 
+/**
+ * Updates the Business Capital section.
+ * It doesn't depend on the other calculators: startup capital is
+ * money for the whole business, not for one product.
+ */
+function updateCapital() {
+  const results = CAPITAL_FIELDS.map((field) => readField(field.id));
+  CAPITAL_FIELDS.forEach((field, i) => showFieldError(field.id, results[i].error));
+
+  // Reset outputs first
+  setOutput("out-capital-total", "—");
+  setOutput("out-capital-largest", "—");
+  const list = document.getElementById("capital-breakdown");
+  list.replaceChildren(); // removes all old rows
+
+  const status = document.getElementById("capital-status");
+  const say = (message, isError = false) => {
+    status.textContent = message;
+    status.classList.toggle("is-error", isError);
+  };
+
+  if (results.some((r) => r.error)) {
+    say("Please fix the highlighted fields.", true);
+    return;
+  }
+  if (results.every((r) => r.value === null)) {
+    say("Start by entering your startup costs.");
+    return;
+  }
+
+  // Empty fields count as RM 0
+  const items = CAPITAL_FIELDS.map((field, i) => ({
+    label: field.label,
+    amount: results[i].value ?? 0,
+  }));
+  const capital = calculateCapital(items);
+
+  setOutput("out-capital-total", formatMoney(capital.total));
+
+  if (capital.largest === null) {
+    say("All amounts are zero.");
+    return;
+  }
+  setOutput("out-capital-largest", capital.largest.label);
+
+  // One row per category that has money in it:
+  // label + amount (share %) on top, a progress bar below.
+  capital.items
+    .filter((item) => item.amount > 0)
+    .forEach((item) => {
+      const row = document.createElement("li");
+
+      const label = document.createElement("div");
+      label.className = "breakdown-label";
+      const name = document.createElement("span");
+      name.textContent = item.label;
+      const amount = document.createElement("span");
+      amount.textContent = `${formatMoney(item.amount)} (${formatPercent(item.percent)})`;
+      label.append(name, amount);
+
+      const bar = document.createElement("div");
+      bar.className = "bar";
+      const fill = document.createElement("div");
+      fill.className = "bar-fill";
+      fill.style.width = `${item.percent}%`; // the bar's length = its share
+      bar.append(fill);
+
+      row.append(label, bar);
+      list.append(row);
+    });
+
+  say("Results update automatically as you type.");
+}
+
 // ---------- 4. Saving and restoring inputs (localStorage) ----------
 
 /**
@@ -366,6 +479,7 @@ function showSaveStatus(isWorking) {
 function updateAll() {
   const product = updateProductCost();
   updateAffiliate(product);
+  updateCapital();
 }
 
 // ---------- Start-up ----------
@@ -376,10 +490,11 @@ document.getElementById("currency-label").textContent =
 
 // One listener on the whole form catches typing in ANY of its inputs.
 // The "input" event fires on every keystroke, so results are live.
-// Typing in either form: recalculate both (the affiliate results depend
-// on the cost form), then save everything.
+// Typing in any form: recalculate everything (the affiliate results depend
+// on the cost form), then save all inputs.
 const costForm = document.getElementById("cost-form");
 const affiliateForm = document.getElementById("affiliate-form");
+const capitalForm = document.getElementById("capital-form");
 
 function handleInput() {
   updateAll();
@@ -387,17 +502,19 @@ function handleInput() {
 }
 costForm.addEventListener("input", handleInput);
 affiliateForm.addEventListener("input", handleInput);
+capitalForm.addEventListener("input", handleInput);
 
 // Pressing Enter inside a form would normally reload the page; stop that.
-[costForm, affiliateForm].forEach((form) =>
+[costForm, affiliateForm, capitalForm].forEach((form) =>
   form.addEventListener("submit", (event) => event.preventDefault())
 );
 
-// "Clear all" empties both forms, deletes the saved data,
+// "Clear all" empties every form, deletes the saved data,
 // then refreshes the results.
 document.getElementById("reset-btn").addEventListener("click", () => {
   costForm.reset();
   affiliateForm.reset();
+  capitalForm.reset();
   clearSavedInputs();
   updateAll();
 });

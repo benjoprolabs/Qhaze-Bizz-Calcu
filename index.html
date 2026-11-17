@@ -37,10 +37,19 @@
       <button type="button" id="reset-btn" class="btn-secondary">Clear all</button>
     </div>
 
+    <!-- ===== SECTION NAVIGATION =====
+         Plain links: "#product-cost" jumps to the element with id="product-cost".
+         No JavaScript needed. -->
+    <nav class="section-nav" aria-label="Calculators">
+      <a href="#product-cost">Product Cost</a>
+      <a href="#affiliate">Affiliate Commission</a>
+      <a href="#capital">Business Capital</a>
+    </nav>
+
     <!-- ===== PRODUCT COST CALCULATOR (Step 2) =====
          Left: the form where you type your numbers.
          Right: the results, updated live by js/app.js. -->
-    <section class="calculator">
+    <section class="calculator" id="product-cost">
 
       <!-- novalidate: we do our own validation in JavaScript so we can show
            friendly messages under each field instead of browser pop-ups. -->
@@ -152,7 +161,7 @@
 
     <!-- ===== AFFILIATE COMMISSION CALCULATOR (Step 3) =====
          Uses the selling price and gross profit from the calculator above. -->
-    <section class="calculator section-gap">
+    <section class="calculator section-gap" id="affiliate">
 
       <form id="affiliate-form" class="card" novalidate>
         <span class="badge">Affiliate Commission</span>
@@ -199,6 +208,92 @@
         <div class="warning" id="loss-warning" role="alert" hidden></div>
 
         <p class="status" id="affiliate-status">Complete the Product Cost calculator first.</p>
+      </aside>
+    </section>
+
+    <!-- ===== BUSINESS CAPITAL CALCULATOR =====
+         One-time money needed to start the business (not per product). -->
+    <section class="calculator section-gap" id="capital">
+
+      <form id="capital-form" class="card" novalidate>
+        <span class="badge">Business Capital</span>
+        <h2>Startup capital</h2>
+        <p class="hint">The one-time money you need before you start selling. Leave a field empty if it doesn't apply.</p>
+
+        <div class="field-grid">
+          <div class="field">
+            <label for="cap-equipment">Equipment &amp; machinery</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="cap-equipment" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="cap-equipment-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="cap-materials">Initial raw materials</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="cap-materials" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="cap-materials-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="cap-packaging">Packaging capital</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="cap-packaging" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="cap-packaging-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="cap-marketing">Marketing budget</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="cap-marketing" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="cap-marketing-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="cap-rental">Rental &amp; utilities</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="cap-rental" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="cap-rental-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="cap-other">Other startup expenses</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="cap-other" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="cap-other-error"></p>
+          </div>
+        </div>
+      </form>
+
+      <aside class="card results" aria-live="polite">
+        <span class="badge badge-cyan">Capital needed</span>
+        <h2>Total startup capital</h2>
+
+        <p class="big-number" id="out-capital-total">—</p>
+
+        <dl class="result-list">
+          <div class="result-row">
+            <dt>Largest expense</dt>
+            <dd id="out-capital-largest" class="dd-text">—</dd>
+          </div>
+        </dl>
+
+        <!-- Filled in by JavaScript: one row with a progress bar per category -->
+        <ul class="breakdown" id="capital-breakdown"></ul>
+
+        <p class="status" id="capital-status">Start by entering your startup costs.</p>
       </aside>
     </section>
   </main>

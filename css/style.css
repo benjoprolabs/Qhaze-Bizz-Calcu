@@ -331,6 +331,11 @@ h1 {
   margin-left: auto;                  /* stays on the right, even after wrapping */
 }
 
+/* Text results (not money) may wrap onto two lines */
+.result-row dd.dd-text {
+  white-space: normal;
+}
+
 /* Profit rows get the gradient treatment */
 .result-row.highlight dd {
   font-size: 1.35rem;
@@ -380,6 +385,106 @@ h1 {
 .result-row.highlight dd.is-loss {
   background: none;
   color: var(--error);
+}
+
+/* ---------- Section navigation ---------- */
+html {
+  scroll-behavior: smooth;   /* links glide instead of jumping */
+}
+
+/* Respect users who turn off animations in their device settings */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+.section-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.section-nav a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.section-nav a:hover,
+.section-nav a:focus-visible {
+  color: var(--cyan);
+  border-color: var(--cyan);
+}
+
+/* Leave a little space above a section when a link scrolls to it */
+.calculator {
+  scroll-margin-top: 16px;
+}
+
+/* ---------- Business Capital ---------- */
+
+/* The headline total. ".card .big-number" beats ".card p" (same lesson as
+   the red error messages): more specific selector wins. */
+.card .big-number {
+  margin: 8px 0 4px;
+  font-size: clamp(1.8rem, 7vw, 2.4rem);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  overflow-wrap: anywhere;   /* very large totals wrap instead of overflowing */
+  background: linear-gradient(90deg, var(--purple), var(--cyan));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Breakdown list with progress bars */
+.breakdown {
+  list-style: none;
+  margin-top: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.breakdown-label {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+}
+
+.breakdown-label span:first-child {
+  color: var(--text-muted);
+}
+
+.breakdown-label span:last-child {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Grey track with a gradient fill; JavaScript sets the fill's width */
+.bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--purple), var(--cyan));
+  transition: width 0.3s ease;
 }
 
 /* ---------- 7. Footer ---------- */

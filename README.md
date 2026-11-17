@@ -42,7 +42,8 @@ README.md       This file
   - [x] Profit margin (%)
 - [x] Step 3: Affiliate commission (with loss warning)
 - [x] Step 4: Remember inputs (saved in the browser with localStorage)
-- [ ] Next: more features
+- [x] Step 5: Business capital calculator
+- [ ] Next: smart selling price, records, dashboard
 
 ## Formulas
 
@@ -57,6 +58,8 @@ README.md       This file
 | Total commission | commission per unit × quantity |
 | Net profit per unit | gross profit − commission per unit |
 | Net margin | net profit ÷ selling price × 100 |
+| Total startup capital | equipment + raw materials + packaging + marketing + rental & utilities + other |
+| Category share | category amount ÷ total startup capital × 100 |
 
 A loss warning appears when the commission is more than the gross profit.
 The highest commission rate you can offer without a loss equals your profit margin.
