@@ -15,6 +15,8 @@
   --purple: #a855f7;        /* accent 1 */
   --cyan: #22d3ee;          /* accent 2 */
   --radius: 14px;           /* rounded corners */
+  --error: #fb7185;         /* validation messages (soft red) */
+  color-scheme: dark;       /* browser draws built-in controls (spinners, scrollbars) dark */
 }
 
 /* ---------- 2. Reset ----------
@@ -146,7 +148,177 @@ h1 {
   background: rgba(168, 85, 247, 0.1);
 }
 
-/* ---------- 6. Footer ---------- */
+/* ---------- 6. Product Cost calculator ---------- */
+
+/* Phone first: form and results stacked in one column. */
+.calculator {
+  display: grid;
+  gap: 20px;
+  align-items: start;
+}
+
+/* On wider screens (tablet/desktop) put them side by side. */
+@media (min-width: 860px) {
+  .calculator {
+    grid-template-columns: 1.5fr 1fr;
+  }
+  /* Results stay in view while you scroll through the form */
+  .results {
+    position: sticky;
+    top: 16px;
+  }
+}
+
+/* The calculator cards shouldn't jump on hover like the small cards do */
+.calculator .card:hover {
+  transform: none;
+}
+
+.hint {
+  margin-bottom: 20px;
+}
+
+/* Inputs: 1 column on phones, 2 columns when there's room */
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 4px 16px;
+}
+
+.field label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+/* The box that holds the "RM" prefix and the input together */
+.input-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* :focus-within = "when the input inside me has focus" */
+.input-wrap:focus-within {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.2);
+}
+
+.prefix {
+  padding: 0 0 0 12px;
+  color: var(--purple);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.input-wrap input {
+  flex: 1;
+  min-width: 0;          /* lets the input shrink on narrow screens */
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;       /* 16px+ stops iPhones zooming in on focus */
+  padding: 12px;
+}
+
+.input-wrap input::placeholder {
+  color: #55557a;
+}
+
+/* Invalid state, switched on by JavaScript */
+.field.invalid .input-wrap {
+  border-color: var(--error);
+  box-shadow: 0 0 0 3px rgba(251, 113, 133, 0.15);
+}
+
+/* ".field .error" is more specific than ".card p", so the red wins */
+.field .error {
+  color: var(--error);
+  font-size: 0.8rem;
+  min-height: 1.4em;     /* reserve space so the layout doesn't jump */
+}
+
+.btn-secondary {
+  margin-top: 8px;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 18px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.btn-secondary:hover,
+.btn-secondary:focus-visible {
+  color: var(--cyan);
+  border-color: var(--cyan);
+}
+
+.badge-cyan {
+  color: var(--cyan);
+  border-color: rgba(34, 211, 238, 0.5);
+  background: rgba(34, 211, 238, 0.1);
+}
+
+/* Results list */
+.result-list {
+  margin-top: 12px;
+}
+
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.result-row dt {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.result-row dd {
+  font-weight: 700;
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums; /* digits line up neatly */
+  text-align: right;
+}
+
+/* Profit rows get the gradient treatment */
+.result-row.highlight dd {
+  font-size: 1.35rem;
+  background: linear-gradient(90deg, var(--purple), var(--cyan));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.status {
+  margin-top: 16px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.status.is-error {
+  color: var(--error);
+}
+
+.upcoming {
+  margin-top: 20px;
+}
+
+/* ---------- 7. Footer ---------- */
 .site-footer {
   text-align: center;
   padding: 24px 16px;

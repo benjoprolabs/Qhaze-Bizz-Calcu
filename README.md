@@ -30,9 +30,19 @@ README.md       This file
 ## Progress
 
 - [x] Step 1: Project skeleton and theme
-- [ ] Step 2: Product cost
-- [ ] Step 3: Selling price
-- [ ] Step 4: Gross profit
-- [ ] Step 5: Profit margin
+- [x] Step 2: Product cost calculator, which also covers:
+  - [x] Selling price per unit (from markup %)
+  - [x] Gross profit per unit
+  - [x] Profit margin (%)
 - [ ] Step 6: Affiliate commission
+
+## Formulas
+
+| Result | Formula |
+|---|---|
+| Total production cost | materials + packaging + shipping + labour + other |
+| Cost per unit | total cost ÷ quantity |
+| Selling price per unit | cost per unit × (1 + markup% ÷ 100) |
+| Gross profit per unit | selling price − cost per unit |
+| Profit margin | gross profit ÷ selling price × 100 |
 - [ ] Step 7: Polish and validation

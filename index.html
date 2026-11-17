@@ -27,40 +27,128 @@
   <!-- ===== MAIN CONTENT ===== -->
   <main class="container">
 
-    <!-- Each calculator gets its own "card". For now they are placeholders;
-         we will turn each one into a working feature, one step at a time. -->
-    <section class="card-grid">
+    <!-- ===== PRODUCT COST CALCULATOR (Step 2) =====
+         Left: the form where you type your numbers.
+         Right: the results, updated live by js/app.js. -->
+    <section class="calculator">
 
-      <article class="card">
-        <span class="badge">Step 2</span>
-        <h2>Product Cost</h2>
-        <p>Add up materials, packaging, shipping and other costs.</p>
-      </article>
+      <!-- novalidate: we do our own validation in JavaScript so we can show
+           friendly messages under each field instead of browser pop-ups. -->
+      <form id="cost-form" class="card" novalidate>
+        <span class="badge">Product Cost</span>
+        <h2>Your costs</h2>
+        <p class="hint">Enter the total cost for the whole production batch. Leave a field empty if it doesn't apply.</p>
 
-      <article class="card">
-        <span class="badge">Step 3</span>
-        <h2>Selling Price</h2>
-        <p>Set your price or work it out from a target markup.</p>
-      </article>
+        <div class="field-grid">
+          <!-- Each field: a label, the input, and an empty error line.
+               The "for" on the label matches the input's "id", so tapping
+               the label focuses the input (good for mobile and accessibility). -->
+          <div class="field">
+            <label for="materials">Raw materials cost</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="materials" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="materials-error"></p>
+          </div>
 
-      <article class="card">
-        <span class="badge">Step 4</span>
-        <h2>Gross Profit</h2>
-        <p>See how much you make on each sale.</p>
-      </article>
+          <div class="field">
+            <label for="packaging">Packaging cost</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="packaging" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="packaging-error"></p>
+          </div>
 
-      <article class="card">
-        <span class="badge">Step 5</span>
-        <h2>Profit Margin</h2>
-        <p>Your profit as a percentage of the selling price.</p>
-      </article>
+          <div class="field">
+            <label for="shipping">Shipping cost</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="shipping" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="shipping-error"></p>
+          </div>
 
+          <div class="field">
+            <label for="labour">Labour cost</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="labour" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="labour-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="other">Other expenses</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="other" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="other-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="quantity">Production quantity</label>
+            <div class="input-wrap">
+              <span class="prefix">Units</span>
+              <input id="quantity" type="number" inputmode="numeric" min="1" step="1" placeholder="e.g. 100">
+            </div>
+            <p class="error" id="quantity-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="markup">Markup</label>
+            <div class="input-wrap">
+              <span class="prefix">%</span>
+              <input id="markup" type="number" inputmode="decimal" min="0" step="0.1" placeholder="e.g. 50">
+            </div>
+            <p class="error" id="markup-error"></p>
+          </div>
+        </div>
+
+        <button type="button" id="reset-btn" class="btn-secondary">Clear all</button>
+      </form>
+
+      <!-- aria-live="polite": screen readers announce result changes -->
+      <aside class="card results" aria-live="polite">
+        <span class="badge badge-cyan">Results</span>
+        <h2>Breakdown</h2>
+
+        <dl class="result-list">
+          <div class="result-row">
+            <dt>Total production cost</dt>
+            <dd id="out-total">—</dd>
+          </div>
+          <div class="result-row">
+            <dt>Cost per unit</dt>
+            <dd id="out-unit-cost">—</dd>
+          </div>
+          <div class="result-row">
+            <dt>Selling price per unit</dt>
+            <dd id="out-price">—</dd>
+          </div>
+          <div class="result-row highlight">
+            <dt>Gross profit per unit</dt>
+            <dd id="out-profit">—</dd>
+          </div>
+          <div class="result-row highlight">
+            <dt>Profit margin</dt>
+            <dd id="out-margin">—</dd>
+          </div>
+        </dl>
+
+        <p class="status" id="status">Start by entering your costs.</p>
+      </aside>
+    </section>
+
+    <!-- Upcoming features stay visible as placeholders -->
+    <section class="card-grid upcoming">
       <article class="card">
-        <span class="badge">Step 6</span>
+        <span class="badge">Coming next</span>
         <h2>Affiliate Commission</h2>
         <p>What you pay affiliates, and the profit left after.</p>
       </article>
-
     </section>
   </main>
 
