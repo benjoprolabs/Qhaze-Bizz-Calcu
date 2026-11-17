@@ -27,40 +27,574 @@
   <!-- ===== MAIN CONTENT ===== -->
   <main class="container">
 
-    <!-- Each calculator gets its own "card". For now they are placeholders;
-         we will turn each one into a working feature, one step at a time. -->
-    <section class="card-grid">
+    <!-- ===== TOOLBAR =====
+         Shows whether inputs are being saved, and clears everything. -->
+    <div class="toolbar">
+      <p class="save-status" id="save-status">
+        <span class="save-dot" aria-hidden="true"></span>
+        <span id="save-status-text">Your inputs are saved on this device automatically.</span>
+      </p>
+      <button type="button" id="reset-btn" class="btn-secondary">Clear all</button>
+    </div>
 
-      <article class="card">
-        <span class="badge">Step 2</span>
-        <h2>Product Cost</h2>
-        <p>Add up materials, packaging, shipping and other costs.</p>
-      </article>
+    <!-- ===== SECTION NAVIGATION =====
+         Plain links: "#product-cost" jumps to the element with id="product-cost".
+         No JavaScript needed. -->
+    <nav class="section-nav" aria-label="Sections">
+      <a href="#dashboard">Dashboard</a>
+      <a href="#product-cost">Product Cost</a>
+      <a href="#affiliate">Affiliate Commission</a>
+      <a href="#capital">Business Capital</a>
+      <a href="#smart-price">Smart Pricing</a>
+      <a href="#records">Records</a>
+    </nav>
 
-      <article class="card">
-        <span class="badge">Step 3</span>
-        <h2>Selling Price</h2>
-        <p>Set your price or work it out from a target markup.</p>
-      </article>
+    <!-- ===== DASHBOARD & REPORTS =====
+         Built from the saved Business Records by js/app.js.
+         Also the page that prints (see @media print in style.css). -->
+    <section id="dashboard" class="dashboard">
+      <div class="card dashboard-card">
+        <div class="dashboard-head">
+          <div>
+            <span class="badge">Dashboard</span>
+            <h2>Business overview</h2>
+            <p class="report-meta" id="report-meta">Based on your saved records.</p>
+          </div>
+          <!-- no-print: hidden on paper -->
+          <div class="dashboard-controls no-print" id="dashboard-controls">
+            <label class="select-label" for="dash-business">Business</label>
+            <select id="dash-business">
+              <option value="">All businesses</option>
+            </select>
+            <button type="button" id="print-btn" class="btn-secondary">Print / Save as PDF</button>
+          </div>
+        </div>
 
-      <article class="card">
-        <span class="badge">Step 4</span>
-        <h2>Gross Profit</h2>
-        <p>See how much you make on each sale.</p>
-      </article>
+        <!-- Shown when there are no records -->
+        <div class="records-empty dashboard-empty" id="dashboard-empty" hidden>
+          <p><strong>Your dashboard is empty.</strong></p>
+          <p>Fill in the calculators, then save a product in Business Records.
+            Your KPIs, margin comparison and printable report will appear here.</p>
+          <a class="btn-secondary btn-small no-print" href="#records">Go to Business Records</a>
+        </div>
 
-      <article class="card">
-        <span class="badge">Step 5</span>
-        <h2>Profit Margin</h2>
-        <p>Your profit as a percentage of the selling price.</p>
-      </article>
+        <div id="dashboard-content">
+          <!-- KPI cards -->
+          <div class="kpi-grid">
+            <div class="kpi">
+              <p class="kpi-label">Products</p>
+              <p class="kpi-value" id="kpi-products">—</p>
+              <p class="kpi-sub" id="kpi-products-sub"></p>
+            </div>
+            <div class="kpi">
+              <p class="kpi-label">Average net margin</p>
+              <p class="kpi-value" id="kpi-margin">—</p>
+              <p class="kpi-sub" id="kpi-margin-sub"></p>
+            </div>
+            <div class="kpi">
+              <p class="kpi-label">Total startup capital</p>
+              <p class="kpi-value" id="kpi-capital">—</p>
+              <p class="kpi-sub" id="kpi-capital-sub"></p>
+            </div>
+            <div class="kpi">
+              <p class="kpi-label">Best margin</p>
+              <p class="kpi-value kpi-value-text" id="kpi-best">—</p>
+              <p class="kpi-sub" id="kpi-best-sub"></p>
+            </div>
+          </div>
 
-      <article class="card">
-        <span class="badge">Step 6</span>
-        <h2>Affiliate Commission</h2>
-        <p>What you pay affiliates, and the profit left after.</p>
-      </article>
+          <!-- Shown when some products lose money -->
+          <div class="warning" id="dash-loss" role="alert" hidden></div>
 
+          <h3 class="results-subhead">Net margin by product</h3>
+          <ul class="breakdown margin-bars" id="margin-bars"></ul>
+
+          <h3 class="results-subhead">Product report</h3>
+          <div class="table-wrap">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th scope="col">Product</th>
+                  <th scope="col">Business</th>
+                  <th scope="col" class="num">Cost / unit</th>
+                  <th scope="col" class="num">Price</th>
+                  <th scope="col" class="num">Net profit / unit</th>
+                  <th scope="col" class="num">Net margin</th>
+                  <th scope="col" class="num">Break-even</th>
+                  <th scope="col">Updated</th>
+                </tr>
+              </thead>
+              <tbody id="report-body"></tbody>
+            </table>
+          </div>
+          <p class="report-note">Net figures come from Smart Pricing when a record has a smart price
+            (after affiliate and platform fees); otherwise from Product Cost markup after the affiliate
+            commission. Startup capital is counted once per business, using its most recently saved figure.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PRODUCT COST CALCULATOR (Step 2) =====
+         Left: the form where you type your numbers.
+         Right: the results, updated live by js/app.js. -->
+    <section class="calculator section-gap" id="product-cost">
+
+      <!-- novalidate: we do our own validation in JavaScript so we can show
+           friendly messages under each field instead of browser pop-ups. -->
+      <form id="cost-form" class="card" novalidate>
+        <span class="badge">Product Cost</span>
+        <h2>Your costs</h2>
+        <p class="hint">Enter the total cost for the whole production batch. Leave a field empty if it doesn't apply.</p>
+
+        <div class="field-grid">
+          <!-- Each field: a label, the input, and an empty error line.
+               The "for" on the label matches the input's "id", so tapping
+               the label focuses the input (good for mobile and accessibility). -->
+          <div class="field">
+            <label for="materials">Raw materials cost</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="materials" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="materials-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="packaging">Packaging cost</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="packaging" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="packaging-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="shipping">Shipping cost</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="shipping" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="shipping-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="labour">Labour cost</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="labour" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="labour-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="other">Other expenses</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="other" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="other-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="quantity">Production quantity</label>
+            <div class="input-wrap">
+              <span class="prefix">Units</span>
+              <input id="quantity" type="number" inputmode="numeric" min="1" step="1" placeholder="e.g. 100">
+            </div>
+            <p class="error" id="quantity-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="markup">Markup</label>
+            <div class="input-wrap">
+              <span class="prefix">%</span>
+              <input id="markup" type="number" inputmode="decimal" min="0" step="0.1" placeholder="e.g. 50">
+            </div>
+            <p class="error" id="markup-error"></p>
+          </div>
+        </div>
+      </form>
+
+      <!-- aria-live="polite": screen readers announce result changes -->
+      <aside class="card results" aria-live="polite">
+        <span class="badge badge-cyan">Results</span>
+        <h2>Breakdown</h2>
+
+        <dl class="result-list">
+          <div class="result-row">
+            <dt>Total production cost</dt>
+            <dd id="out-total">—</dd>
+          </div>
+          <div class="result-row">
+            <dt>Cost per unit</dt>
+            <dd id="out-unit-cost">—</dd>
+          </div>
+          <div class="result-row">
+            <dt>Selling price per unit</dt>
+            <dd id="out-price">—</dd>
+          </div>
+          <div class="result-row highlight">
+            <dt>Gross profit per unit</dt>
+            <dd id="out-profit">—</dd>
+          </div>
+          <div class="result-row highlight">
+            <dt>Profit margin</dt>
+            <dd id="out-margin">—</dd>
+          </div>
+        </dl>
+
+        <p class="status" id="status">Start by entering your costs.</p>
+      </aside>
+    </section>
+
+    <!-- ===== AFFILIATE COMMISSION CALCULATOR (Step 3) =====
+         Uses the selling price and gross profit from the calculator above. -->
+    <section class="calculator section-gap" id="affiliate">
+
+      <form id="affiliate-form" class="card" novalidate>
+        <span class="badge">Affiliate Commission</span>
+        <h2>Affiliate payout</h2>
+        <p class="hint">Commission is a percentage of the selling price, paid to the affiliate for each unit they sell.</p>
+
+        <div class="field-grid">
+          <div class="field">
+            <label for="commission">Commission rate</label>
+            <div class="input-wrap">
+              <span class="prefix">%</span>
+              <input id="commission" type="number" inputmode="decimal" min="0" max="100" step="0.1" placeholder="e.g. 10">
+            </div>
+            <p class="error" id="commission-error"></p>
+          </div>
+        </div>
+      </form>
+
+      <aside class="card results" aria-live="polite">
+        <span class="badge badge-cyan">After commission</span>
+        <h2>Your take-home</h2>
+
+        <dl class="result-list">
+          <div class="result-row">
+            <dt>Commission per unit</dt>
+            <dd id="out-commission">—</dd>
+          </div>
+          <div class="result-row">
+            <dt>Total commission (whole batch)</dt>
+            <dd id="out-commission-total">—</dd>
+          </div>
+          <div class="result-row highlight">
+            <dt>Net profit per unit</dt>
+            <dd id="out-net-profit">—</dd>
+          </div>
+          <div class="result-row highlight">
+            <dt>Net margin</dt>
+            <dd id="out-net-margin">—</dd>
+          </div>
+        </dl>
+
+        <!-- Hidden until the commission is bigger than the profit.
+             role="alert" makes screen readers announce it immediately. -->
+        <div class="warning" id="loss-warning" role="alert" hidden></div>
+
+        <p class="status" id="affiliate-status">Complete the Product Cost calculator first.</p>
+      </aside>
+    </section>
+
+    <!-- ===== BUSINESS CAPITAL CALCULATOR =====
+         One-time money needed to start the business (not per product). -->
+    <section class="calculator section-gap" id="capital">
+
+      <form id="capital-form" class="card" novalidate>
+        <span class="badge">Business Capital</span>
+        <h2>Startup capital</h2>
+        <p class="hint">The one-time money you need before you start selling. Leave a field empty if it doesn't apply.</p>
+
+        <div class="field-grid">
+          <div class="field">
+            <label for="cap-equipment">Equipment &amp; machinery</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="cap-equipment" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="cap-equipment-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="cap-materials">Initial raw materials</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="cap-materials" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="cap-materials-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="cap-packaging">Packaging capital</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="cap-packaging" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="cap-packaging-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="cap-marketing">Marketing budget</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="cap-marketing" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="cap-marketing-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="cap-rental">Rental &amp; utilities</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="cap-rental" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="cap-rental-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="cap-other">Other startup expenses</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="cap-other" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="cap-other-error"></p>
+          </div>
+        </div>
+      </form>
+
+      <aside class="card results" aria-live="polite">
+        <span class="badge badge-cyan">Capital needed</span>
+        <h2>Total startup capital</h2>
+
+        <p class="big-number" id="out-capital-total">—</p>
+
+        <dl class="result-list">
+          <div class="result-row">
+            <dt>Largest expense</dt>
+            <dd id="out-capital-largest" class="dd-text">—</dd>
+          </div>
+        </dl>
+
+        <!-- Filled in by JavaScript: one row with a progress bar per category -->
+        <ul class="breakdown" id="capital-breakdown"></ul>
+
+        <p class="status" id="capital-status">Start by entering your startup costs.</p>
+      </aside>
+    </section>
+
+    <!-- ===== SMART SELLING PRICE CALCULATOR =====
+         Uses the cost per unit from Product Cost (or a manual value)
+         and the startup capital from Business Capital. -->
+    <section class="calculator section-gap" id="smart-price">
+
+      <form id="smart-form" class="card" novalidate>
+        <span class="badge">Smart Pricing</span>
+        <h2>Smart selling price</h2>
+        <p class="hint">Find a price that covers your cost, fees and target profit.</p>
+
+        <div class="field-grid">
+          <div class="field">
+            <label for="sp-cost">Product cost per unit</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="sp-cost" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="sp-cost-error"></p>
+            <!-- Shows whether the cost is linked to Product Cost or typed by hand -->
+            <p class="link-note" id="sp-cost-note"></p>
+            <button type="button" class="btn-link" id="sp-relink" hidden></button>
+          </div>
+
+          <!-- fieldset + legend groups the two radio buttons under one question -->
+          <fieldset class="field">
+            <legend>Pricing method</legend>
+            <div class="segmented">
+              <label>
+                <input type="radio" name="sp-method" value="margin" checked>
+                <span>Target margin</span>
+              </label>
+              <label>
+                <input type="radio" name="sp-method" value="markup">
+                <span>Markup</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="field">
+            <!-- The label text changes with the pricing method -->
+            <label for="sp-rate" id="sp-rate-label">Target profit margin (after fees)</label>
+            <div class="input-wrap">
+              <span class="prefix">%</span>
+              <input id="sp-rate" type="number" inputmode="decimal" min="0" step="0.1" placeholder="e.g. 30">
+            </div>
+            <p class="error" id="sp-rate-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="sp-wholesale">Wholesale discount</label>
+            <div class="input-wrap">
+              <span class="prefix">%</span>
+              <input id="sp-wholesale" type="number" inputmode="decimal" min="0" max="100" step="0.1" placeholder="e.g. 20">
+            </div>
+            <p class="error" id="sp-wholesale-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="sp-affiliate">Affiliate commission</label>
+            <div class="input-wrap">
+              <span class="prefix">%</span>
+              <input id="sp-affiliate" type="number" inputmode="decimal" min="0" max="100" step="0.1" placeholder="e.g. 10">
+            </div>
+            <p class="error" id="sp-affiliate-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="sp-platform">Platform fee</label>
+            <div class="input-wrap">
+              <span class="prefix">%</span>
+              <input id="sp-platform" type="number" inputmode="decimal" min="0" max="100" step="0.1" placeholder="e.g. 5">
+            </div>
+            <p class="error" id="sp-platform-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="sp-fixed-fee">Fixed fee per sale</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="sp-fixed-fee" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="sp-fixed-fee-error"></p>
+          </div>
+        </div>
+      </form>
+
+      <aside class="card results" aria-live="polite">
+        <span class="badge badge-cyan">Recommended</span>
+        <h2>Retail price</h2>
+
+        <p class="big-number" id="out-sp-price">—</p>
+        <p class="sub-number" id="out-sp-ratio">—</p>
+
+        <h3 class="results-subhead">Per unit (retail)</h3>
+        <dl class="result-list">
+          <div class="result-row">
+            <dt>Gross profit</dt>
+            <dd id="out-sp-gross">—</dd>
+          </div>
+          <div class="result-row">
+            <dt>Affiliate commission</dt>
+            <dd id="out-sp-affiliate">—</dd>
+          </div>
+          <div class="result-row">
+            <dt>Platform fees</dt>
+            <dd id="out-sp-platform">—</dd>
+          </div>
+          <div class="result-row highlight">
+            <dt>Net profit</dt>
+            <dd id="out-sp-net">—</dd>
+          </div>
+          <div class="result-row highlight">
+            <dt>Net margin</dt>
+            <dd id="out-sp-net-margin">—</dd>
+          </div>
+        </dl>
+
+        <h3 class="results-subhead">Wholesale</h3>
+        <dl class="result-list">
+          <div class="result-row">
+            <dt>Wholesale price</dt>
+            <dd id="out-sp-wholesale">—</dd>
+          </div>
+          <div class="result-row">
+            <dt>Wholesale profit per unit</dt>
+            <dd id="out-sp-wholesale-profit">—</dd>
+          </div>
+          <div class="result-row">
+            <dt>Wholesale margin</dt>
+            <dd id="out-sp-wholesale-margin">—</dd>
+          </div>
+        </dl>
+
+        <h3 class="results-subhead">Break-even</h3>
+        <dl class="result-list">
+          <div class="result-row">
+            <dt>Minimum price (no loss)</dt>
+            <dd id="out-sp-min-price">—</dd>
+          </div>
+          <div class="result-row">
+            <dt>Startup capital to recover</dt>
+            <dd id="out-sp-capital">—</dd>
+          </div>
+          <div class="result-row">
+            <dt>Units to break even</dt>
+            <dd id="out-sp-breakeven" class="dd-text">—</dd>
+          </div>
+        </dl>
+
+        <!-- One or more warnings (loss, wholesale below cost) -->
+        <div class="warning" id="sp-warning" role="alert" hidden></div>
+
+        <p class="status" id="sp-status">Enter a product cost to begin.</p>
+      </aside>
+    </section>
+
+    <!-- ===== BUSINESS RECORDS =====
+         Saved snapshots of the calculators. Stored in localStorage under
+         their own key, so "Clear all" never deletes them. -->
+    <section class="section-gap" id="records">
+      <div class="card records-card">
+        <span class="badge">Business Records</span>
+        <h2>Saved records</h2>
+        <p class="hint">Save everything currently in the calculators under a product and business name.
+          Records stay in this browser and are not affected by "Clear all".
+          Use <strong>Export backup</strong> to keep a copy safe.</p>
+
+        <!-- Save form -->
+        <form id="record-form" class="record-form" novalidate>
+          <div class="field-grid">
+            <div class="field">
+              <label for="record-product">Product name</label>
+              <div class="input-wrap">
+                <input id="record-product" type="text" maxlength="100" placeholder="e.g. Rose Serum 30ml" autocomplete="off">
+              </div>
+              <p class="error" id="record-product-error"></p>
+            </div>
+            <div class="field">
+              <label for="record-business">Business name</label>
+              <div class="input-wrap">
+                <!-- list="..." connects the box to the <datalist> suggestions -->
+                <input id="record-business" type="text" maxlength="100" placeholder="e.g. QHAZE Beauty" list="business-suggestions" autocomplete="off">
+              </div>
+              <p class="error" id="record-business-error"></p>
+            </div>
+          </div>
+          <datalist id="business-suggestions"></datalist>
+          <button type="submit" class="btn-primary">Save as record</button>
+        </form>
+
+        <!-- Search + backup -->
+        <div class="records-toolbar">
+          <div class="input-wrap search-wrap">
+            <span class="prefix">Search</span>
+            <input id="record-search" type="search" placeholder="Product or business" aria-label="Search records" autocomplete="off">
+          </div>
+          <div class="records-actions">
+            <button type="button" id="export-btn" class="btn-secondary">Export backup</button>
+            <button type="button" id="import-btn" class="btn-secondary">Import backup</button>
+            <!-- Real file picker, hidden; the Import button opens it -->
+            <input type="file" id="import-file" accept=".json,application/json" hidden>
+          </div>
+        </div>
+
+        <!-- Messages like "Saved", "Imported 3 records" -->
+        <p class="status" id="records-status" role="status"></p>
+
+        <!-- Filled in by JavaScript: groups of records by business -->
+        <div id="records-list"></div>
+      </div>
     </section>
   </main>
 

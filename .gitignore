@@ -1,0 +1,5 @@
+# Installed test tools (recreated with "npm install")
+node_modules/
+
+# Screenshots and files created by the tests
+tests/output/
