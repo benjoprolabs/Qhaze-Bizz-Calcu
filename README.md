@@ -43,7 +43,8 @@ README.md       This file
 - [x] Step 3: Affiliate commission (with loss warning)
 - [x] Step 4: Remember inputs (saved in the browser with localStorage)
 - [x] Step 5: Business capital calculator
-- [ ] Next: smart selling price, records, dashboard
+- [x] Step 6: Smart selling price calculator (linked to Product Cost)
+- [ ] Next: business records, dashboard and reports
 
 ## Formulas
 
@@ -60,6 +61,16 @@ README.md       This file
 | Net margin | net profit ÷ selling price × 100 |
 | Total startup capital | equipment + raw materials + packaging + marketing + rental & utilities + other |
 | Category share | category amount ÷ total startup capital × 100 |
+| Smart price (target margin) | (cost + fixed fee) ÷ (1 − affiliate% − platform% − margin%), rounded up to the sen |
+| Smart price (markup) | cost × (1 + markup% ÷ 100) |
+| Platform fees | price × platform% + fixed fee |
+| Net profit (smart) | price − cost − affiliate commission − platform fees |
+| Minimum price (no loss) | (cost + fixed fee) ÷ (1 − affiliate% − platform%) |
+| Wholesale price | retail price × (1 − wholesale discount%) (no affiliate/platform fees) |
+| Units to break even | startup capital ÷ net profit per unit, rounded up |
+
+The Smart Pricing cost is linked to the Product Cost "cost per unit" until you type
+your own value; **Use Product Cost** links it again.
 
 A loss warning appears when the commission is more than the gross profit.
 The highest commission rate you can offer without a loss equals your profit margin.

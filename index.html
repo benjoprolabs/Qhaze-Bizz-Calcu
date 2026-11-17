@@ -44,6 +44,7 @@
       <a href="#product-cost">Product Cost</a>
       <a href="#affiliate">Affiliate Commission</a>
       <a href="#capital">Business Capital</a>
+      <a href="#smart-price">Smart Pricing</a>
     </nav>
 
     <!-- ===== PRODUCT COST CALCULATOR (Step 2) =====
@@ -294,6 +295,162 @@
         <ul class="breakdown" id="capital-breakdown"></ul>
 
         <p class="status" id="capital-status">Start by entering your startup costs.</p>
+      </aside>
+    </section>
+
+    <!-- ===== SMART SELLING PRICE CALCULATOR =====
+         Uses the cost per unit from Product Cost (or a manual value)
+         and the startup capital from Business Capital. -->
+    <section class="calculator section-gap" id="smart-price">
+
+      <form id="smart-form" class="card" novalidate>
+        <span class="badge">Smart Pricing</span>
+        <h2>Smart selling price</h2>
+        <p class="hint">Find a price that covers your cost, fees and target profit.</p>
+
+        <div class="field-grid">
+          <div class="field">
+            <label for="sp-cost">Product cost per unit</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="sp-cost" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="sp-cost-error"></p>
+            <!-- Shows whether the cost is linked to Product Cost or typed by hand -->
+            <p class="link-note" id="sp-cost-note"></p>
+            <button type="button" class="btn-link" id="sp-relink" hidden></button>
+          </div>
+
+          <!-- fieldset + legend groups the two radio buttons under one question -->
+          <fieldset class="field">
+            <legend>Pricing method</legend>
+            <div class="segmented">
+              <label>
+                <input type="radio" name="sp-method" value="margin" checked>
+                <span>Target margin</span>
+              </label>
+              <label>
+                <input type="radio" name="sp-method" value="markup">
+                <span>Markup</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="field">
+            <!-- The label text changes with the pricing method -->
+            <label for="sp-rate" id="sp-rate-label">Target profit margin (after fees)</label>
+            <div class="input-wrap">
+              <span class="prefix">%</span>
+              <input id="sp-rate" type="number" inputmode="decimal" min="0" step="0.1" placeholder="e.g. 30">
+            </div>
+            <p class="error" id="sp-rate-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="sp-wholesale">Wholesale discount</label>
+            <div class="input-wrap">
+              <span class="prefix">%</span>
+              <input id="sp-wholesale" type="number" inputmode="decimal" min="0" max="100" step="0.1" placeholder="e.g. 20">
+            </div>
+            <p class="error" id="sp-wholesale-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="sp-affiliate">Affiliate commission</label>
+            <div class="input-wrap">
+              <span class="prefix">%</span>
+              <input id="sp-affiliate" type="number" inputmode="decimal" min="0" max="100" step="0.1" placeholder="e.g. 10">
+            </div>
+            <p class="error" id="sp-affiliate-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="sp-platform">Platform fee</label>
+            <div class="input-wrap">
+              <span class="prefix">%</span>
+              <input id="sp-platform" type="number" inputmode="decimal" min="0" max="100" step="0.1" placeholder="e.g. 5">
+            </div>
+            <p class="error" id="sp-platform-error"></p>
+          </div>
+
+          <div class="field">
+            <label for="sp-fixed-fee">Fixed fee per sale</label>
+            <div class="input-wrap">
+              <span class="prefix">RM</span>
+              <input id="sp-fixed-fee" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <p class="error" id="sp-fixed-fee-error"></p>
+          </div>
+        </div>
+      </form>
+
+      <aside class="card results" aria-live="polite">
+        <span class="badge badge-cyan">Recommended</span>
+        <h2>Retail price</h2>
+
+        <p class="big-number" id="out-sp-price">—</p>
+        <p class="sub-number" id="out-sp-ratio">—</p>
+
+        <h3 class="results-subhead">Per unit (retail)</h3>
+        <dl class="result-list">
+          <div class="result-row">
+            <dt>Gross profit</dt>
+            <dd id="out-sp-gross">—</dd>
+          </div>
+          <div class="result-row">
+            <dt>Affiliate commission</dt>
+            <dd id="out-sp-affiliate">—</dd>
+          </div>
+          <div class="result-row">
+            <dt>Platform fees</dt>
+            <dd id="out-sp-platform">—</dd>
+          </div>
+          <div class="result-row highlight">
+            <dt>Net profit</dt>
+            <dd id="out-sp-net">—</dd>
+          </div>
+          <div class="result-row highlight">
+            <dt>Net margin</dt>
+            <dd id="out-sp-net-margin">—</dd>
+          </div>
+        </dl>
+
+        <h3 class="results-subhead">Wholesale</h3>
+        <dl class="result-list">
+          <div class="result-row">
+            <dt>Wholesale price</dt>
+            <dd id="out-sp-wholesale">—</dd>
+          </div>
+          <div class="result-row">
+            <dt>Wholesale profit per unit</dt>
+            <dd id="out-sp-wholesale-profit">—</dd>
+          </div>
+          <div class="result-row">
+            <dt>Wholesale margin</dt>
+            <dd id="out-sp-wholesale-margin">—</dd>
+          </div>
+        </dl>
+
+        <h3 class="results-subhead">Break-even</h3>
+        <dl class="result-list">
+          <div class="result-row">
+            <dt>Minimum price (no loss)</dt>
+            <dd id="out-sp-min-price">—</dd>
+          </div>
+          <div class="result-row">
+            <dt>Startup capital to recover</dt>
+            <dd id="out-sp-capital">—</dd>
+          </div>
+          <div class="result-row">
+            <dt>Units to break even</dt>
+            <dd id="out-sp-breakeven" class="dd-text">—</dd>
+          </div>
+        </dl>
+
+        <!-- One or more warnings (loss, wholesale below cost) -->
+        <div class="warning" id="sp-warning" role="alert" hidden></div>
+
+        <p class="status" id="sp-status">Enter a product cost to begin.</p>
       </aside>
     </section>
   </main>

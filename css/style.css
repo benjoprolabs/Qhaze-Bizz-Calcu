@@ -381,7 +381,11 @@ h1 {
   display: none;
 }
 
-/* A loss figure drops the gradient and turns red */
+/* A loss figure turns red (and drops the gradient on highlighted rows) */
+.result-row dd.is-loss {
+  color: var(--error);
+}
+
 .result-row.highlight dd.is-loss {
   background: none;
   color: var(--error);
@@ -485,6 +489,125 @@ html {
   border-radius: 999px;
   background: linear-gradient(90deg, var(--purple), var(--cyan));
   transition: width 0.3s ease;
+}
+
+/* ---------- Smart Pricing ---------- */
+
+/* Remove the browser's default box around <fieldset> */
+fieldset.field {
+  border: none;
+  min-width: 0;
+}
+
+/* Make <legend> look like our other field labels */
+fieldset.field legend {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  padding: 0;
+}
+
+/* Two-option switch built from radio buttons */
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 1.4em;      /* lines up with fields that have an error line */
+}
+
+/* Hide the round dot but keep the radio usable by keyboard and screen readers */
+.segmented input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.segmented span {
+  display: block;
+  text-align: center;
+  padding: 8px 6px;
+  border-radius: 7px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+/* ":checked + span" = the span right after a ticked radio */
+.segmented input:checked + span {
+  background: linear-gradient(135deg, var(--purple), var(--cyan));
+  color: var(--bg);
+  font-weight: 700;
+}
+
+.segmented input:focus-visible + span {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+/* "Linked to Product Cost" note under the cost field */
+.card .link-note {
+  font-size: 0.8rem;
+  color: var(--cyan);
+  margin-top: -0.6em;
+}
+
+.card .link-note.is-manual {
+  color: var(--text-muted);
+}
+
+/* A button that looks like a text link */
+.btn-link {
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--purple);
+  background: none;
+  border: none;
+  padding: 2px 0 10px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.btn-link:hover,
+.btn-link:focus-visible {
+  color: var(--cyan);
+}
+
+.btn-link[hidden] {
+  display: none;
+}
+
+/* Small line under the big price ("50.00% markup · 33.33% margin") */
+.card .sub-number {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Small headings that split the results card into groups */
+.results-subhead {
+  margin-top: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--purple);
+}
+
+.results-subhead + .result-list {
+  margin-top: 4px;
+}
+
+/* Space between several warning messages in one box */
+.warning p + strong {
+  display: block;
+  margin-top: 10px;
 }
 
 /* ---------- 7. Footer ---------- */
