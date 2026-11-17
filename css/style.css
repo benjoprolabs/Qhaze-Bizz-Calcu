@@ -278,7 +278,8 @@ h1 {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 12px;
+  flex-wrap: wrap;       /* very long values move to their own line */
+  gap: 4px 12px;
   padding: 12px 0;
   border-bottom: 1px solid var(--border);
 }
@@ -293,6 +294,8 @@ h1 {
   font-size: 1.1rem;
   font-variant-numeric: tabular-nums; /* digits line up neatly */
   text-align: right;
+  white-space: nowrap;                /* never split "RM" from its number */
+  margin-left: auto;                  /* stays on the right, even after wrapping */
 }
 
 /* Profit rows get the gradient treatment */
@@ -314,8 +317,36 @@ h1 {
   color: var(--error);
 }
 
-.upcoming {
+/* Space between the two calculators */
+.section-gap {
   margin-top: 20px;
+}
+
+/* ---------- Loss warning (Affiliate Commission) ---------- */
+.warning {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--error);
+  border-left-width: 4px;
+  border-radius: 10px;
+  background: rgba(251, 113, 133, 0.1);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.warning strong {
+  color: var(--error);
+}
+
+/* The browser's "hidden" attribute must win over display rules */
+.warning[hidden] {
+  display: none;
+}
+
+/* A loss figure drops the gradient and turns red */
+.result-row.highlight dd.is-loss {
+  background: none;
+  color: var(--error);
 }
 
 /* ---------- 7. Footer ---------- */

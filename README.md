@@ -34,7 +34,8 @@ README.md       This file
   - [x] Selling price per unit (from markup %)
   - [x] Gross profit per unit
   - [x] Profit margin (%)
-- [ ] Step 6: Affiliate commission
+- [x] Step 3: Affiliate commission (with loss warning)
+- [ ] Next: polish and extra features
 
 ## Formulas
 
@@ -45,4 +46,10 @@ README.md       This file
 | Selling price per unit | cost per unit × (1 + markup% ÷ 100) |
 | Gross profit per unit | selling price − cost per unit |
 | Profit margin | gross profit ÷ selling price × 100 |
-- [ ] Step 7: Polish and validation
+| Commission per unit | selling price × commission% ÷ 100 |
+| Total commission | commission per unit × quantity |
+| Net profit per unit | gross profit − commission per unit |
+| Net margin | net profit ÷ selling price × 100 |
+
+A loss warning appears when the commission is more than the gross profit.
+The highest commission rate you can offer without a loss equals your profit margin.

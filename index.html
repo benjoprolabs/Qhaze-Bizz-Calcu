@@ -142,13 +142,56 @@
       </aside>
     </section>
 
-    <!-- Upcoming features stay visible as placeholders -->
-    <section class="card-grid upcoming">
-      <article class="card">
-        <span class="badge">Coming next</span>
-        <h2>Affiliate Commission</h2>
-        <p>What you pay affiliates, and the profit left after.</p>
-      </article>
+    <!-- ===== AFFILIATE COMMISSION CALCULATOR (Step 3) =====
+         Uses the selling price and gross profit from the calculator above. -->
+    <section class="calculator section-gap">
+
+      <form id="affiliate-form" class="card" novalidate>
+        <span class="badge">Affiliate Commission</span>
+        <h2>Affiliate payout</h2>
+        <p class="hint">Commission is a percentage of the selling price, paid to the affiliate for each unit they sell.</p>
+
+        <div class="field-grid">
+          <div class="field">
+            <label for="commission">Commission rate</label>
+            <div class="input-wrap">
+              <span class="prefix">%</span>
+              <input id="commission" type="number" inputmode="decimal" min="0" max="100" step="0.1" placeholder="e.g. 10">
+            </div>
+            <p class="error" id="commission-error"></p>
+          </div>
+        </div>
+      </form>
+
+      <aside class="card results" aria-live="polite">
+        <span class="badge badge-cyan">After commission</span>
+        <h2>Your take-home</h2>
+
+        <dl class="result-list">
+          <div class="result-row">
+            <dt>Commission per unit</dt>
+            <dd id="out-commission">—</dd>
+          </div>
+          <div class="result-row">
+            <dt>Total commission (whole batch)</dt>
+            <dd id="out-commission-total">—</dd>
+          </div>
+          <div class="result-row highlight">
+            <dt>Net profit per unit</dt>
+            <dd id="out-net-profit">—</dd>
+          </div>
+          <div class="result-row highlight">
+            <dt>Net margin</dt>
+            <dd id="out-net-margin">—</dd>
+          </div>
+        </dl>
+
+        <!-- Hidden until the commission is bigger than the profit.
+             role="alert" makes screen readers announce it immediately. -->
+        <div class="warning" id="loss-warning" role="alert" hidden></div>
+
+        <p class="status" id="affiliate-status">Complete the Product Cost calculator first.</p>
+      </aside>
     </section>
   </main>
 
