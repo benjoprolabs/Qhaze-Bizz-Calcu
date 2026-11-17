@@ -45,6 +45,7 @@
       <a href="#affiliate">Affiliate Commission</a>
       <a href="#capital">Business Capital</a>
       <a href="#smart-price">Smart Pricing</a>
+      <a href="#records">Records</a>
     </nav>
 
     <!-- ===== PRODUCT COST CALCULATOR (Step 2) =====
@@ -452,6 +453,62 @@
 
         <p class="status" id="sp-status">Enter a product cost to begin.</p>
       </aside>
+    </section>
+
+    <!-- ===== BUSINESS RECORDS =====
+         Saved snapshots of the calculators. Stored in localStorage under
+         their own key, so "Clear all" never deletes them. -->
+    <section class="section-gap" id="records">
+      <div class="card records-card">
+        <span class="badge">Business Records</span>
+        <h2>Saved records</h2>
+        <p class="hint">Save everything currently in the calculators under a product and business name.
+          Records stay in this browser and are not affected by "Clear all".
+          Use <strong>Export backup</strong> to keep a copy safe.</p>
+
+        <!-- Save form -->
+        <form id="record-form" class="record-form" novalidate>
+          <div class="field-grid">
+            <div class="field">
+              <label for="record-product">Product name</label>
+              <div class="input-wrap">
+                <input id="record-product" type="text" maxlength="100" placeholder="e.g. Rose Serum 30ml" autocomplete="off">
+              </div>
+              <p class="error" id="record-product-error"></p>
+            </div>
+            <div class="field">
+              <label for="record-business">Business name</label>
+              <div class="input-wrap">
+                <!-- list="..." connects the box to the <datalist> suggestions -->
+                <input id="record-business" type="text" maxlength="100" placeholder="e.g. QHAZE Beauty" list="business-suggestions" autocomplete="off">
+              </div>
+              <p class="error" id="record-business-error"></p>
+            </div>
+          </div>
+          <datalist id="business-suggestions"></datalist>
+          <button type="submit" class="btn-primary">Save as record</button>
+        </form>
+
+        <!-- Search + backup -->
+        <div class="records-toolbar">
+          <div class="input-wrap search-wrap">
+            <span class="prefix">Search</span>
+            <input id="record-search" type="search" placeholder="Product or business" aria-label="Search records" autocomplete="off">
+          </div>
+          <div class="records-actions">
+            <button type="button" id="export-btn" class="btn-secondary">Export backup</button>
+            <button type="button" id="import-btn" class="btn-secondary">Import backup</button>
+            <!-- Real file picker, hidden; the Import button opens it -->
+            <input type="file" id="import-file" accept=".json,application/json" hidden>
+          </div>
+        </div>
+
+        <!-- Messages like "Saved", "Imported 3 records" -->
+        <p class="status" id="records-status" role="status"></p>
+
+        <!-- Filled in by JavaScript: groups of records by business -->
+        <div id="records-list"></div>
+      </div>
     </section>
   </main>
 

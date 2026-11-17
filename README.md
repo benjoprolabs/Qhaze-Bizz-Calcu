@@ -16,6 +16,18 @@ Everything you type is saved automatically in your browser (localStorage) and
 restored when you come back. It stays on your device and is never sent anywhere.
 **Clear all** empties the form and deletes the saved data.
 
+## Business records
+
+Save the current calculator values under a **product name** and **business name**.
+Records are grouped by business and can be searched, loaded back into the
+calculators, viewed, renamed, updated and deleted. They are stored in your browser
+under a separate key, so **Clear all** never deletes them.
+
+**Export backup** downloads all records as a `.json` file. **Import backup** reads
+such a file back in: records with the same ID are replaced, new ones are added,
+and anything damaged is skipped. Export regularly: clearing your browser data
+deletes records stored in the browser.
+
 ## Tech stack
 
 Plain **HTML**, **CSS** and **JavaScript**. No frameworks, no build tools, nothing to install.
@@ -44,7 +56,8 @@ README.md       This file
 - [x] Step 4: Remember inputs (saved in the browser with localStorage)
 - [x] Step 5: Business capital calculator
 - [x] Step 6: Smart selling price calculator (linked to Product Cost)
-- [ ] Next: business records, dashboard and reports
+- [x] Step 7: Business records (save, group, search, load, view, edit, delete, JSON backup)
+- [ ] Next: dashboard and reports
 
 ## Formulas
 

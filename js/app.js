@@ -362,6 +362,7 @@ function updateProductCost() {
 /**
  * Updates the Affiliate Commission section.
  * @param {object|null} product  results from updateProductCost()
+ * Returns the affiliate results, or null if they can't be worked out yet.
  */
 function updateAffiliate(product) {
   const rateResult = readField("commission", { max: 100 });
@@ -384,15 +385,15 @@ function updateAffiliate(product) {
 
   if (rateResult.error) {
     say("Please fix the commission rate.", true);
-    return;
+    return null;
   }
   if (product === null) {
     say("Complete the Product Cost calculator first (costs, quantity and markup).");
-    return;
+    return null;
   }
   if (rateResult.value === null) {
     say("Enter a commission rate to see your take-home profit.");
-    return;
+    return null;
   }
 
   const a = calculateAffiliate(product.sellingPrice, product.grossProfit, rateResult.value);
@@ -426,6 +427,7 @@ function updateAffiliate(product) {
   } else {
     say("Results update automatically as you type.");
   }
+  return a;
 }
 
 /**
@@ -508,6 +510,7 @@ function updateCapital() {
  * Updates the Smart Selling Price section.
  * @param {number|null} linkedCost    cost per unit from Product Cost
  * @param {number|null} capitalTotal  startup capital from Business Capital
+ * Returns the smart pricing results (plus cost and break-even units), or null.
  */
 function updateSmartPrice(linkedCost, capitalTotal) {
   const costInput = document.getElementById("sp-cost");
@@ -578,15 +581,15 @@ function updateSmartPrice(linkedCost, capitalTotal) {
   // 5. Stop early if something is missing or wrong
   if (Object.values(fields).some((f) => f.error)) {
     say("Please fix the highlighted fields.", true);
-    return;
+    return null;
   }
   if (fields.cost.value === null) {
     say("Enter a product cost to begin.");
-    return;
+    return null;
   }
   if (fields.rate.value === null) {
     say(method === "margin" ? "Enter your target profit margin %." : "Enter your markup %.");
-    return;
+    return null;
   }
 
   // 6. Calculate (empty optional fields count as 0)
@@ -604,7 +607,7 @@ function updateSmartPrice(linkedCost, capitalTotal) {
     const total = fields.rate.value + (fields.affiliate.value ?? 0) + (fields.platform.value ?? 0);
     say(`Margin + fees add up to ${formatPercent(total)}. They must stay below 100%, ` +
         "or no price can reach your target. Lower the margin or the fees.", true);
-    return;
+    return null;
   }
 
   // 7. Show the results
@@ -622,11 +625,12 @@ function updateSmartPrice(linkedCost, capitalTotal) {
   setOutput("out-sp-min-price", r.minPrice === null ? "Not possible" : formatMoney(r.minPrice));
 
   // Break-even uses the startup capital from the Business Capital section
+  let units = null;
   if (capitalTotal === null) {
     setOutput("out-sp-breakeven", "Fill in Business Capital");
   } else {
     setOutput("out-sp-capital", formatMoney(capitalTotal));
-    const units = calculateBreakEvenUnits(capitalTotal, r.netProfit);
+    units = calculateBreakEvenUnits(capitalTotal, r.netProfit);
     if (units === null) {
       setOutput("out-sp-breakeven", "Never (no profit per sale)");
     } else {
@@ -668,6 +672,7 @@ function updateSmartPrice(linkedCost, capitalTotal) {
 
   say(messages.length > 0 ? "Check the warnings above." : "Results update automatically as you type.",
       messages.length > 0);
+  return { ...r, cost: fields.cost.value, breakEvenUnits: units };
 }
 
 // ---------- 4. Saving and restoring inputs (localStorage) ----------
@@ -677,20 +682,11 @@ function updateSmartPrice(linkedCost, capitalTotal) {
  * Returns true if it worked, false if the browser blocked it.
  */
 function saveInputs() {
-  // Build a plain object like { materials: "500", packaging: "", ... }
-  const values = {};
-  SAVED_FIELDS.forEach((id) => {
-    values[id] = document.getElementById(id).value;
-  });
-  // Two extra settings that aren't plain text boxes (stored as text too)
-  values["sp-method"] = document.querySelector('input[name="sp-method"]:checked').value;
-  values["sp-cost-manual"] = String(spCostManual); // true -> "true"
-
   // localStorage can only store text, so we convert the object to a
   // JSON string. It can throw an error (private mode, storage full),
   // so we "try" it and "catch" the error instead of crashing.
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(collectInputs()));
     return true;
   } catch (error) {
     return false;
@@ -712,21 +708,46 @@ function restoreInputs() {
   }
 
   // Make sure we got an object, not e.g. a number or a list
-  if (typeof saved !== "object" || saved === null || Array.isArray(saved)) return;
+  if (!isPlainObject(saved)) return;
+  applyInputs(saved);
+}
 
-  // Only restore fields we know about, and only if the value is text.
-  // We never trust stored data blindly.
+/**
+ * Reads every calculator input into a plain object, e.g.
+ * { materials: "500", packaging: "", ..., "sp-method": "margin" }.
+ * Used by auto-save AND by Business Records.
+ */
+function collectInputs() {
+  const values = {};
   SAVED_FIELDS.forEach((id) => {
-    if (typeof saved[id] === "string") {
-      document.getElementById(id).value = saved[id];
-    }
+    values[id] = document.getElementById(id).value;
   });
+  // Two extra settings that aren't plain text boxes (stored as text too)
+  values["sp-method"] = document.querySelector('input[name="sp-method"]:checked').value;
+  values["sp-cost-manual"] = String(spCostManual); // true -> "true"
+  return values;
+}
 
+/**
+ * Writes an object made by collectInputs() back into the calculators.
+ * Missing or unexpected values become empty / default.
+ * We never trust stored data blindly.
+ */
+function applyInputs(values) {
+  SAVED_FIELDS.forEach((id) => {
+    document.getElementById(id).value = typeof values[id] === "string" ? values[id] : "";
+  });
   // Only accept the exact values we expect for the two extra settings
-  if (saved["sp-method"] === "margin" || saved["sp-method"] === "markup") {
-    document.querySelector(`input[name="sp-method"][value="${saved["sp-method"]}"]`).checked = true;
-  }
-  spCostManual = saved["sp-cost-manual"] === "true";
+  const method = values["sp-method"] === "markup" ? "markup" : "margin";
+  document.querySelector(`input[name="sp-method"][value="${method}"]`).checked = true;
+  spCostManual = values["sp-cost-manual"] === "true";
+}
+
+/**
+ * True for a normal {...} object (not null, not a list, not a number).
+ */
+function isPlainObject(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 /**
@@ -758,9 +779,604 @@ function showSaveStatus(isWorking) {
  */
 function updateAll() {
   const product = updateProductCost();
-  updateAffiliate(product.pricing);
+  const affiliate = updateAffiliate(product.pricing);
   const capitalTotal = updateCapital();
-  updateSmartPrice(product.costPerUnit, capitalTotal);
+  const smart = updateSmartPrice(product.costPerUnit, capitalTotal);
+
+  // A "snapshot" of the key numbers, saved inside Business Records.
+  // "?." (optional chaining) gives undefined instead of crashing when the
+  // thing on the left is null; "?? null" then turns that into null.
+  return {
+    totalCost: product.pricing?.totalCost ?? null,
+    costPerUnit: product.costPerUnit,
+    sellingPrice: product.pricing?.sellingPrice ?? null,
+    grossProfit: product.pricing?.grossProfit ?? null,
+    marginPercent: product.pricing?.marginPercent ?? null,
+    commissionPerUnit: affiliate?.commission ?? null,
+    netProfit: affiliate?.netProfit ?? null,
+    netMarginPercent: affiliate?.netMarginPercent ?? null,
+    capitalTotal,
+    smartCost: smart?.cost ?? null,
+    smartPrice: smart?.price ?? null,
+    smartNetProfit: smart?.netProfit ?? null,
+    smartNetMarginPercent: smart?.netMarginPercent ?? null,
+    wholesalePrice: smart?.wholesalePrice ?? null,
+    breakEvenUnits: smart?.breakEvenUnits ?? null,
+  };
+}
+
+// ---------- 5. Business Records (localStorage) ----------
+
+// Records live under their OWN key, separate from the auto-saved inputs,
+// so "Clear all" (which deletes STORAGE_KEY) never touches them.
+const RECORDS_KEY = "qhaze-records-v1";
+const MAX_NAME_LENGTH = 100;
+const MAX_IMPORT_BYTES = 5 * 1024 * 1024; // 5 MB: far more than any real backup
+
+// Labels and formats used by "View" to describe a record.
+// Each entry: [key, label, kind]. kind decides how the value is shown.
+const INPUT_INFO = [
+  ["materials", "Raw materials cost", "money"],
+  ["packaging", "Packaging cost", "money"],
+  ["shipping", "Shipping cost", "money"],
+  ["labour", "Labour cost", "money"],
+  ["other", "Other expenses", "money"],
+  ["quantity", "Production quantity", "units"],
+  ["markup", "Markup", "percent"],
+  ["commission", "Affiliate commission rate", "percent"],
+  ...CAPITAL_FIELDS.map((field) => [field.id, field.label, "money"]),
+  ["sp-cost", "Smart pricing: cost per unit", "money"],
+  ["sp-rate", "Smart pricing: margin / markup", "percent"],
+  ["sp-wholesale", "Wholesale discount", "percent"],
+  ["sp-affiliate", "Smart pricing: affiliate", "percent"],
+  ["sp-platform", "Platform fee", "percent"],
+  ["sp-fixed-fee", "Fixed fee per sale", "money"],
+];
+const RESULT_INFO = [
+  ["totalCost", "Total production cost", "money"],
+  ["costPerUnit", "Cost per unit", "money"],
+  ["sellingPrice", "Selling price (markup)", "money"],
+  ["grossProfit", "Gross profit per unit", "money"],
+  ["marginPercent", "Profit margin", "percent"],
+  ["commissionPerUnit", "Affiliate commission per unit", "money"],
+  ["netProfit", "Net profit after commission", "money"],
+  ["netMarginPercent", "Net margin after commission", "percent"],
+  ["capitalTotal", "Total startup capital", "money"],
+  ["smartCost", "Smart pricing cost per unit", "money"],
+  ["smartPrice", "Smart retail price", "money"],
+  ["smartNetProfit", "Smart net profit per unit", "money"],
+  ["smartNetMarginPercent", "Smart net margin", "percent"],
+  ["wholesalePrice", "Wholesale price", "money"],
+  ["breakEvenUnits", "Units to break even", "units"],
+];
+
+// The app's records, kept in memory while the page is open.
+let records = [];
+let editingId = null;            // id of the record being edited, or null
+const openDetails = new Set();   // ids whose "View" panel is open
+
+/**
+ * Formats one stored value for display, based on its kind.
+ */
+function formatValue(value, kind) {
+  const n = Number(value);
+  if (kind === "money") return formatMoney(n);
+  if (kind === "percent") return formatPercent(n);
+  return `${n.toLocaleString(CONFIG.locale)} units`;
+}
+
+/**
+ * A unique id for a new record. crypto.randomUUID() is built into modern
+ * browsers; the fallback covers older ones.
+ */
+function makeId() {
+  if (window.crypto && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+/**
+ * Tidies a name: must be text, spaces trimmed, 1-100 characters.
+ * Returns the cleaned name, or null if it isn't acceptable.
+ */
+function cleanName(value) {
+  if (typeof value !== "string") return null;
+  const name = value.trim();
+  return name.length > 0 && name.length <= MAX_NAME_LENGTH ? name : null;
+}
+
+/**
+ * Checks one record (from storage OR an imported file) and returns a clean
+ * copy containing only what we expect, or null if it's unusable.
+ * This is our defence against damaged or tampered data.
+ */
+function cleanRecord(raw) {
+  if (!isPlainObject(raw)) return null;
+  const productName = cleanName(raw.productName);
+  const businessName = cleanName(raw.businessName);
+  if (productName === null || businessName === null) return null;
+
+  // Inputs: only known keys, only short text values
+  const inputs = {};
+  const rawInputs = isPlainObject(raw.inputs) ? raw.inputs : {};
+  [...SAVED_FIELDS, "sp-method", "sp-cost-manual"].forEach((key) => {
+    const value = rawInputs[key];
+    if (typeof value === "string" && value.length <= 50) inputs[key] = value;
+  });
+
+  // Results: only known keys, only real numbers (or null)
+  const results = {};
+  const rawResults = isPlainObject(raw.results) ? raw.results : {};
+  RESULT_INFO.forEach(([key]) => {
+    const value = rawResults[key];
+    results[key] = typeof value === "number" && Number.isFinite(value) ? value : null;
+  });
+
+  const validDate = (value) =>
+    typeof value === "string" && !Number.isNaN(Date.parse(value)) ? value : new Date().toISOString();
+  const id = typeof raw.id === "string" && raw.id.length > 0 && raw.id.length <= 100 ? raw.id : makeId();
+
+  return {
+    id,
+    productName,
+    businessName,
+    createdAt: validDate(raw.createdAt),
+    updatedAt: validDate(raw.updatedAt),
+    inputs,
+    results,
+  };
+}
+
+/**
+ * Reads records from localStorage. Bad entries are skipped.
+ */
+function loadRecords() {
+  try {
+    const text = localStorage.getItem(RECORDS_KEY);
+    if (text === null) return [];
+    const data = JSON.parse(text);
+    if (!Array.isArray(data)) return [];
+    // map() cleans each one; filter() drops the ones that came back null
+    return data.map(cleanRecord).filter((record) => record !== null);
+  } catch (error) {
+    return [];
+  }
+}
+
+/**
+ * Writes all records to localStorage. Returns true if it worked.
+ */
+function saveRecords() {
+  try {
+    localStorage.setItem(RECORDS_KEY, JSON.stringify(records));
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
+ * Shows a message under the records toolbar.
+ */
+function recordsMessage(message, isError = false) {
+  const status = document.getElementById("records-status");
+  status.textContent = message;
+  status.classList.toggle("is-error", isError);
+}
+
+/**
+ * Saves the records and reports a problem if storage failed.
+ * Returns true if saved.
+ */
+function persistRecords(successMessage) {
+  if (saveRecords()) {
+    recordsMessage(successMessage);
+    return true;
+  }
+  recordsMessage("Couldn't save to this browser's storage (blocked or full). " +
+    "Your change is kept until you close the page. Use Export backup to keep a copy.", true);
+  return false;
+}
+
+/**
+ * Case-insensitive "same name" check, ignoring spaces at the ends.
+ */
+function sameName(a, b) {
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
+/**
+ * Finds another record with the same product AND business name.
+ */
+function findDuplicate(productName, businessName, ignoreId = null) {
+  return records.find((record) =>
+    record.id !== ignoreId &&
+    sameName(record.productName, productName) &&
+    sameName(record.businessName, businessName));
+}
+
+/**
+ * If a business with this name already exists (ignoring capital letters),
+ * returns its existing spelling, so "qhaze beauty" becomes "QHAZE Beauty"
+ * and each business keeps one consistent name.
+ */
+function matchBusinessSpelling(name, ignoreId = null) {
+  const existing = records.find((r) => r.id !== ignoreId && sameName(r.businessName, name));
+  return existing ? existing.businessName : name;
+}
+
+/**
+ * "Save as record": stores the current calculator inputs and results.
+ */
+function saveCurrentAsRecord() {
+  const productName = cleanName(document.getElementById("record-product").value);
+  let businessName = cleanName(document.getElementById("record-business").value);
+  showFieldError("record-product", productName === null ? "Enter a product name." : "");
+  showFieldError("record-business", businessName === null ? "Enter a business name." : "");
+  if (productName === null || businessName === null) return;
+  businessName = matchBusinessSpelling(businessName);
+
+  const inputs = collectInputs();
+  // Is there anything to save? (any calculator box filled in)
+  if (SAVED_FIELDS.every((id) => inputs[id].trim() === "")) {
+    recordsMessage("Fill in at least one calculator before saving a record.", true);
+    return;
+  }
+  const duplicate = findDuplicate(productName, businessName);
+  if (duplicate) {
+    recordsMessage(`"${duplicate.productName}" already exists in ${duplicate.businessName}. ` +
+      "Use a different name, or use Edit on that record to update it.", true);
+    return;
+  }
+
+  const now = new Date().toISOString();
+  records.push({
+    id: makeId(),
+    productName,
+    businessName,
+    createdAt: now,
+    updatedAt: now,
+    inputs,
+    results: updateAll(), // recalculate and take the snapshot
+  });
+  persistRecords(`Saved "${productName}" in ${businessName}.`);
+  document.getElementById("record-product").value = "";
+  renderRecords();
+}
+
+/**
+ * Puts a record's inputs back into the calculators.
+ */
+function loadRecord(id) {
+  const record = records.find((r) => r.id === id);
+  if (!record) return;
+  applyInputs(record.inputs);
+  updateAll();                       // recalculate from the loaded inputs
+  showSaveStatus(saveInputs());      // and auto-save them as usual
+  recordsMessage(`Loaded "${record.productName}" into the calculators.`);
+  document.getElementById("product-cost").scrollIntoView();
+}
+
+/**
+ * Deletes a record after the user confirms.
+ */
+function deleteRecord(id) {
+  const record = records.find((r) => r.id === id);
+  if (!record) return;
+  // confirm() shows the browser's OK / Cancel box and returns true or false
+  const ok = window.confirm(`Delete "${record.productName}" from ${record.businessName}? This can't be undone.`);
+  if (!ok) return;
+  records = records.filter((r) => r.id !== id);
+  openDetails.delete(id);
+  if (editingId === id) editingId = null;
+  persistRecords(`Deleted "${record.productName}".`);
+  renderRecords();
+}
+
+/**
+ * Saves the inline Edit form: rename and/or replace the numbers.
+ */
+function saveEdit(id, form) {
+  const record = records.find((r) => r.id === id);
+  if (!record) return;
+  const productName = cleanName(form.querySelector('[name="productName"]').value);
+  let businessName = cleanName(form.querySelector('[name="businessName"]').value);
+  const replaceNumbers = form.querySelector('[name="replace"]').checked;
+  const error = form.querySelector(".error");
+
+  if (productName === null || businessName === null) {
+    error.textContent = "Product and business names can't be empty.";
+    return;
+  }
+  businessName = matchBusinessSpelling(businessName, id);
+  if (findDuplicate(productName, businessName, id)) {
+    error.textContent = `Another record is already called "${productName}" in ${businessName}.`;
+    return;
+  }
+
+  record.productName = productName;
+  record.businessName = businessName;
+  if (replaceNumbers) {
+    record.inputs = collectInputs();
+    record.results = updateAll();
+  }
+  record.updatedAt = new Date().toISOString();
+  editingId = null;
+  persistRecords(replaceNumbers
+    ? `Updated "${productName}" with the current calculator values.`
+    : `Renamed to "${productName}" in ${businessName}.`);
+  renderRecords();
+}
+
+/**
+ * Small helper: create an element with a class and text in one line.
+ */
+function el(tag, className = "", text = "") {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text) node.textContent = text; // textContent: names can never run as code
+  return node;
+}
+
+function smallButton(text, action, id, extraClass = "") {
+  const button = el("button", `btn-secondary btn-small ${extraClass}`.trim(), text);
+  button.type = "button";
+  // data-* attributes store which action and which record this button is for
+  button.dataset.action = action;
+  button.dataset.id = id;
+  return button;
+}
+
+/**
+ * Builds the "View" panel: saved inputs and results.
+ */
+function buildDetails(record) {
+  const panel = el("div", "record-details");
+  panel.hidden = !openDetails.has(record.id);
+
+  const makeGroup = (title, rows) => {
+    const group = el("div");
+    group.append(el("h4", "results-subhead", title));
+    const list = el("dl", "result-list");
+    rows.forEach(([label, value]) => {
+      const row = el("div", "result-row");
+      row.append(el("dt", "", label), el("dd", "dd-text", value));
+      list.append(row);
+    });
+    if (rows.length === 0) list.append(el("p", "record-meta", "Nothing entered."));
+    group.append(list);
+    return group;
+  };
+
+  // Only show inputs that were filled in, and only valid numbers
+  const inputRows = INPUT_INFO
+    .filter(([key]) => (record.inputs[key] ?? "").trim() !== "" && Number.isFinite(Number(record.inputs[key])))
+    .map(([key, label, kind]) => [label, formatValue(record.inputs[key], kind)]);
+  if ((record.inputs["sp-rate"] ?? "").trim() !== "") {
+    inputRows.push(["Smart pricing method", record.inputs["sp-method"] === "markup" ? "Markup" : "Target margin"]);
+  }
+  const resultRows = RESULT_INFO
+    .filter(([key]) => record.results[key] !== null)
+    .map(([key, label, kind]) => [label, formatValue(record.results[key], kind)]);
+
+  panel.append(makeGroup("Saved inputs", inputRows), makeGroup("Saved results", resultRows));
+  return panel;
+}
+
+/**
+ * Builds the inline Edit form for one record.
+ */
+function buildEditForm(record) {
+  const form = el("form", "record-edit");
+  form.dataset.id = record.id;
+  form.noValidate = true;
+
+  const grid = el("div", "field-grid");
+  [["productName", "Product name", record.productName],
+   ["businessName", "Business name", record.businessName]].forEach(([name, label, value]) => {
+    const field = el("div", "field");
+    const inputId = `edit-${name}`;
+    const labelEl = el("label", "", label);
+    labelEl.htmlFor = inputId;
+    const wrap = el("div", "input-wrap");
+    const input = el("input");
+    input.id = inputId;
+    input.name = name;
+    input.type = "text";
+    input.maxLength = MAX_NAME_LENGTH;
+    input.value = value;
+    if (name === "businessName") input.setAttribute("list", "business-suggestions");
+    wrap.append(input);
+    field.append(labelEl, wrap);
+    grid.append(field);
+  });
+
+  const checkLabel = el("label", "checkbox-row");
+  const checkbox = el("input");
+  checkbox.type = "checkbox";
+  checkbox.name = "replace";
+  checkLabel.append(checkbox, el("span", "", "Also replace the saved numbers with the values in the calculators right now"));
+
+  const buttons = el("div", "record-buttons");
+  const save = el("button", "btn-primary btn-small", "Save changes");
+  save.type = "submit";
+  buttons.append(save, smallButton("Cancel", "cancel-edit", record.id));
+
+  form.append(grid, checkLabel, el("p", "error"), buttons);
+  return form;
+}
+
+/**
+ * Builds one record row (name, summary, buttons, details, edit form).
+ */
+function buildRecord(record) {
+  const item = el("li", "record");
+  item.dataset.id = record.id;
+
+  const main = el("div", "record-main");
+  const info = el("div", "record-info");
+  info.append(el("p", "record-name", record.productName));
+
+  // Short summary: date + cost and price if we have them
+  const date = new Date(record.updatedAt).toLocaleDateString(CONFIG.locale,
+    { day: "numeric", month: "short", year: "numeric" });
+  const parts = [`Saved ${date}`];
+  const cost = record.results.costPerUnit ?? record.results.smartCost;
+  const price = record.results.smartPrice ?? record.results.sellingPrice;
+  if (cost !== null) parts.push(`Cost/unit ${formatMoney(cost)}`);
+  if (price !== null) parts.push(`Price ${formatMoney(price)}`);
+  info.append(el("p", "record-meta", parts.join(" · ")));
+
+  const buttons = el("div", "record-buttons");
+  const isOpen = openDetails.has(record.id);
+  const view = smallButton(isOpen ? "Hide" : "View", "view", record.id);
+  view.setAttribute("aria-expanded", String(isOpen));
+  buttons.append(
+    smallButton("Load", "load", record.id),
+    view,
+    smallButton("Edit", "edit", record.id),
+    smallButton("Delete", "delete", record.id, "btn-danger"),
+  );
+  main.append(info, buttons);
+  item.append(main, buildDetails(record));
+  if (editingId === record.id) item.append(buildEditForm(record));
+  return item;
+}
+
+/**
+ * Redraws the whole records list: filter by search, group by business.
+ */
+function renderRecords() {
+  const list = document.getElementById("records-list");
+  list.replaceChildren();
+
+  // Business name suggestions for the save and edit forms
+  const businesses = [...new Set(records.map((r) => r.businessName))]
+    .sort((a, b) => a.localeCompare(b));
+  const datalist = document.getElementById("business-suggestions");
+  datalist.replaceChildren(...businesses.map((name) => {
+    const option = el("option");
+    option.value = name;
+    return option;
+  }));
+
+  if (records.length === 0) {
+    list.append(el("p", "records-empty", "No saved records yet. Fill in the calculators, then save your first product above."));
+    return;
+  }
+
+  // Search: keep records whose product OR business name contains the text
+  const query = document.getElementById("record-search").value.trim().toLowerCase();
+  const matches = records.filter((r) =>
+    r.productName.toLowerCase().includes(query) || r.businessName.toLowerCase().includes(query));
+
+  if (matches.length === 0) {
+    list.append(el("p", "records-empty", `No records match "${query}".`));
+    return;
+  }
+
+  // Group: { "QHAZE Beauty": [record, record], "Other Co": [record] }
+  const groups = {};
+  matches.forEach((record) => {
+    // Group names ignore capital letters, so "qhaze" and "QHAZE" go together
+    const key = record.businessName.toLowerCase();
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(record);
+  });
+
+  Object.keys(groups).sort().forEach((key) => {
+    const groupRecords = groups[key].sort((a, b) => a.productName.localeCompare(b.productName));
+    const section = el("section", "record-group");
+    const title = el("h3", "record-group-title", groupRecords[0].businessName);
+    const count = groupRecords.length;
+    title.append(el("span", "record-count", `${count} ${count === 1 ? "product" : "products"}`));
+    const ul = el("ul", "record-list");
+    groupRecords.forEach((record) => ul.append(buildRecord(record)));
+    section.append(title, ul);
+    list.append(section);
+  });
+}
+
+// ---------- 6. Backup: export and import (JSON files) ----------
+
+/**
+ * Downloads all records as a .json file.
+ */
+function exportRecords() {
+  if (records.length === 0) {
+    recordsMessage("There are no records to export yet.", true);
+    return;
+  }
+  const backup = {
+    app: "qhaze-business-calculator",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    records,
+  };
+  // A Blob is file content held in memory; createObjectURL gives it a
+  // temporary address that a download link can point to.
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `qhaze-records-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.append(link);
+  link.click();               // start the download
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000); // free the memory
+  const n = records.length;
+  recordsMessage(`Exported ${n} ${n === 1 ? "record" : "records"}. Keep the file somewhere safe.`);
+}
+
+/**
+ * Reads a backup file chosen by the user and merges it into the records.
+ * "async" lets us "await" the file being read without freezing the page.
+ */
+async function importRecords(file) {
+  if (file.size > MAX_IMPORT_BYTES) {
+    recordsMessage("That file is too large to be a QHAZE backup.", true);
+    return;
+  }
+  let data;
+  try {
+    data = JSON.parse(await file.text());
+  } catch (error) {
+    recordsMessage("That file isn't a valid backup (it couldn't be read as JSON).", true);
+    return;
+  }
+  if (!isPlainObject(data) || data.app !== "qhaze-business-calculator" || !Array.isArray(data.records)) {
+    recordsMessage("That file isn't a QHAZE Business Calculator backup.", true);
+    return;
+  }
+
+  const cleaned = data.records.map(cleanRecord).filter((record) => record !== null);
+  const skipped = data.records.length - cleaned.length;
+  if (cleaned.length === 0) {
+    recordsMessage("No usable records were found in that backup.", true);
+    return;
+  }
+
+  const ok = window.confirm(`Import ${cleaned.length} ${cleaned.length === 1 ? "record" : "records"}? ` +
+    "Records you already have with the same ID will be replaced by the backup copy. Other records are kept.");
+  if (!ok) return;
+
+  // Merge: same id -> replace, new id -> add
+  let added = 0;
+  let replaced = 0;
+  cleaned.forEach((record) => {
+    const index = records.findIndex((r) => r.id === record.id);
+    if (index === -1) {
+      records.push(record);
+      added += 1;
+    } else {
+      records[index] = record;
+      replaced += 1;
+    }
+  });
+
+  let message = `Imported: ${added} added, ${replaced} replaced.`;
+  if (skipped > 0) message += ` ${skipped} damaged ${skipped === 1 ? "entry was" : "entries were"} skipped.`;
+  persistRecords(message);
+  renderRecords();
 }
 
 // ---------- Start-up ----------
@@ -819,7 +1435,64 @@ document.getElementById("reset-btn").addEventListener("click", () => {
   updateAll();
 });
 
+// ----- Business Records events -----
+document.getElementById("record-form").addEventListener("submit", (event) => {
+  event.preventDefault(); // stay on the page
+  saveCurrentAsRecord();
+});
+
+document.getElementById("record-search").addEventListener("input", renderRecords);
+
+// One click listener for ALL record buttons ("event delegation").
+// Each button carries data-action and data-id, so we know what to do.
+const recordsList = document.getElementById("records-list");
+recordsList.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-action]");
+  if (!button) return;
+  const id = button.dataset.id;
+  const action = button.dataset.action;
+
+  if (action === "load") loadRecord(id);
+  if (action === "delete") deleteRecord(id);
+  if (action === "view") {
+    // A Set can add/delete/has; here we flip the panel open or closed
+    if (openDetails.has(id)) openDetails.delete(id); else openDetails.add(id);
+    renderRecords();
+  }
+  if (action === "edit") {
+    editingId = id;
+    renderRecords();
+    document.getElementById("edit-productName").focus();
+  }
+  if (action === "cancel-edit") {
+    editingId = null;
+    renderRecords();
+  }
+});
+
+// The edit form's "Save changes" button submits the form
+recordsList.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const form = event.target.closest("form.record-edit");
+  if (form) saveEdit(form.dataset.id, form);
+});
+
+// Backup buttons
+document.getElementById("export-btn").addEventListener("click", exportRecords);
+const importFile = document.getElementById("import-file");
+document.getElementById("import-btn").addEventListener("click", () => importFile.click());
+importFile.addEventListener("change", async () => {
+  if (importFile.files.length > 0) {
+    await importRecords(importFile.files[0]);
+  }
+  importFile.value = ""; // so choosing the same file again still triggers "change"
+});
+
 // On page load: put saved values back FIRST, then calculate. The results
 // are worked out exactly as if the user had just typed those values.
 restoreInputs();
 updateAll();
+
+// Load and show the saved records
+records = loadRecords();
+renderRecords();

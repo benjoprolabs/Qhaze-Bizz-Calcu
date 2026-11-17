@@ -610,6 +610,195 @@ fieldset.field legend {
   margin-top: 10px;
 }
 
+/* ---------- Business Records ---------- */
+#records {
+  scroll-margin-top: 16px;
+}
+
+/* Main action button: gradient, like the logo */
+.btn-primary {
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--bg);
+  background: linear-gradient(135deg, var(--purple), var(--cyan));
+  border: none;
+  border-radius: 10px;
+  padding: 11px 20px;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.btn-primary:hover,
+.btn-primary:focus-visible {
+  box-shadow: 0 0 18px rgba(168, 85, 247, 0.45);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+/* Small buttons inside each record */
+.btn-small {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+}
+
+.btn-danger:hover,
+.btn-danger:focus-visible {
+  color: var(--error);
+  border-color: var(--error);
+}
+
+.record-form {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.records-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.search-wrap {
+  flex: 1 1 240px;          /* grows, but wraps below 240px */
+  min-width: 0;             /* flex items won't shrink below their content without this */
+}
+
+.records-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.card .records-empty {
+  margin-top: 16px;
+  padding: 24px 16px;
+  text-align: center;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+}
+
+/* One group per business */
+.record-group {
+  margin-top: 20px;
+}
+
+.record-group-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 1rem;
+  color: var(--purple);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.record-count {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.record-list {
+  list-style: none;
+}
+
+.record {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.record-main {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px 16px;
+}
+
+.record-info {
+  min-width: 0;             /* lets long names wrap instead of overflowing */
+}
+
+.card .record-name {
+  color: var(--text);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.card .record-meta {
+  font-size: 0.8rem;
+}
+
+.record-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* "View" panel with the saved inputs and results */
+.record-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 4px 24px;
+  margin-top: 12px;
+  padding: 14px 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.record-details[hidden],
+.record-edit[hidden] {
+  display: none;
+}
+
+.record-details .results-subhead {
+  margin-top: 8px;
+}
+
+.record-details .result-row {
+  padding: 6px 0;
+  font-size: 0.85rem;
+}
+
+.record-details .result-row dt {
+  font-size: 0.85rem;
+}
+
+.record-details .result-row dd {
+  font-size: 0.9rem;
+}
+
+/* Inline edit form */
+.record-edit {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--cyan);
+  border-radius: 10px;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+
+.checkbox-row input {
+  margin-top: 3px;
+  accent-color: var(--purple);
+}
+
 /* ---------- 7. Footer ---------- */
 .site-footer {
   text-align: center;
