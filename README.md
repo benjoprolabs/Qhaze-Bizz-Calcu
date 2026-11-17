@@ -36,6 +36,11 @@ Plain **HTML**, **CSS** and **JavaScript**. No frameworks, no build tools, nothi
 
 Open `index.html` in any web browser (double-click it).
 
+## Tests
+
+242 automated browser tests live in `tests/`. Run them with `npm test`
+(see `tests/README.md` for the one-time setup). The app itself needs no install.
+
 ## Project structure
 
 ```
@@ -43,6 +48,8 @@ index.html      Page structure
 css/style.css   Dark futuristic theme (purple and cyan)
 js/app.js       Calculation logic
 README.md       This file
+tests/          Automated browser tests (npm test)
+package.json    Test setup only (the app doesn't need it)
 ```
 
 ## Progress
